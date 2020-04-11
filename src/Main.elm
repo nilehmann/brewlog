@@ -11,7 +11,11 @@ import Element.Font as Font
 import Element.Input as I
 import Hops
 import Html
+import Html.Attributes as Html
 import Ingredients
+import Logs
+import Task
+import Time
 import Url
 
 
@@ -38,6 +42,8 @@ type alias Model =
     { basicInfo : BasicInfo.Model
     , ingredients : Ingredients.Model
     , hops : Hops.Model
+    , logs : Logs.Model
+    , zone : Time.Zone
     }
 
 
@@ -46,8 +52,10 @@ init _ _ _ =
     ( { basicInfo = BasicInfo.init
       , ingredients = Ingredients.init
       , hops = Hops.init
+      , logs = Logs.init
+      , zone = Time.utc
       }
-    , Cmd.none
+    , Task.perform AdjustTimeZone Time.here
     )
 
 
@@ -58,13 +66,19 @@ init _ _ _ =
 type Msg
     = GotIngredientsMsg Ingredients.Msg
     | GotHopsMsg Hops.Msg
+    | GotLogsMsg Logs.Msg
     | GotBasicInfoMsg BasicInfo.Msg
     | DoNothing
+    | AdjustTimeZone Time.Zone
+    | Tick Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        AdjustTimeZone zone ->
+            ( { model | zone = zone }, Cmd.none )
+
         GotIngredientsMsg subMsg ->
             ( { model | ingredients = Ingredients.update subMsg model.ingredients }
             , Cmd.none
@@ -75,6 +89,15 @@ update msg model =
             , Cmd.none
             )
 
+        GotLogsMsg subMsg ->
+            let
+                ( subModel, subCmd ) =
+                    Logs.update model.zone subMsg model.logs
+            in
+            ( { model | logs = subModel }
+            , Cmd.map GotLogsMsg subCmd
+            )
+
         GotBasicInfoMsg subMsg ->
             ( { model | basicInfo = BasicInfo.update subMsg model.basicInfo }
             , Cmd.none
@@ -83,16 +106,35 @@ update msg model =
         DoNothing ->
             ( model, Cmd.none )
 
+        Tick posix ->
+            ( model, Cmd.none )
+
 
 
 -- VIEW
 
 
+fontHref =
+    "https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap"
+
+
 view : Model -> Browser.Document Msg
 view model =
-    { title = "Brewing Day"
-    , body = [ layout [ Background.color (rgb 1 0 0), Font.size 16 ] (page model) ]
+    { title = "BrewLog"
+    , body =
+        [ htmlLink
+            [ Html.href fontHref
+            , Html.rel "stylesheet"
+            ]
+        , layout
+            [ Font.family [ Font.typeface "Indie Flower" ], Font.size 20 ]
+            (page model)
+        ]
     }
+
+
+htmlLink a =
+    Html.node "link" a []
 
 
 page model =
@@ -104,14 +146,15 @@ header =
 
 
 body model =
-    column [ spacing 20, centerX, width (px 920), Background.color (rgb 1 0 1) ]
+    column [ spacing 60, centerX, width (px 920) ]
         [ map GotBasicInfoMsg (BasicInfo.view model.basicInfo)
         , receipe model
+        , map GotLogsMsg (Logs.view model.logs (BasicInfo.getDate model.basicInfo))
         ]
 
 
 receipe model =
-    row [ spacing 100, width fill ]
+    row [ spacing 40, width fill ]
         [ el [ alignLeft, alignTop, width (fillPortion 1) ]
             (map GotIngredientsMsg (Ingredients.view model.ingredients))
         , el [ alignRight, alignTop, width (fillPortion 1) ]
@@ -128,5 +171,9 @@ box color w h =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    Debug.log "1" Sub.none
+
+
+
+-- Time.every 5000 Tick

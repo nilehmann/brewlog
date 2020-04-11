@@ -1,7 +1,13 @@
-module BasicInfo exposing (Model, Msg, init, update, view)
+module BasicInfo exposing (Model, Msg, getDate, init, update, view)
 
+import DateTime
+import Dict
 import Element exposing (..)
+import Element.Border as Border
+import Element.Events as Events
+import Element.Font as Font
 import Element.Input as I
+import Objecthash.Value as V
 
 
 
@@ -9,18 +15,75 @@ import Element.Input as I
 
 
 type alias Model =
-    { date : String
+    { date : Date
     , name : String
     , batchSize : String
     }
 
 
+type Date
+    = ParsedDate DateTime.Date
+    | UnparsedDate String
+    | ParseErrorDate String
+
+
 init : Model
 init =
-    { date = "February 30, 2018"
+    { date = UnparsedDate "30 Feb 2018" |> parse
     , name = "Grizzly Beer Ale"
     , batchSize = "5 gallons (19l)"
     }
+
+
+toObjecthashValue : Model -> Maybe V.Value
+toObjecthashValue model =
+    case parse model.date of
+        ParsedDate d ->
+            [ ( "date", V.string (DateTime.unparseDate d) )
+            , ( "name", V.string model.name )
+            , ( "batchSize", V.string model.batchSize )
+            ]
+                |> Dict.fromList
+                |> V.dict
+                |> Just
+
+        _ ->
+            Nothing
+
+
+getDate : Model -> Maybe DateTime.Date
+getDate model =
+    case model.date of
+        UnparsedDate str ->
+            DateTime.parseDate str
+
+        ParsedDate date ->
+            Just date
+
+        ParseErrorDate _ ->
+            Nothing
+
+
+parse : Date -> Date
+parse date =
+    case date of
+        UnparsedDate str ->
+            DateTime.parseDate str
+                |> Maybe.map ParsedDate
+                |> Maybe.withDefault (ParseErrorDate str)
+
+        _ ->
+            date
+
+
+unparse : Date -> Date
+unparse date =
+    case date of
+        ParsedDate d ->
+            UnparsedDate (DateTime.unparseDate d)
+
+        _ ->
+            date
 
 
 
@@ -31,13 +94,21 @@ type Msg
     = ChangeDate String
     | ChangeName String
     | ChangeBatchSize String
+    | ParseDate
+    | UnparseDate
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        ChangeDate date ->
-            { model | date = date }
+        ChangeDate s ->
+            { model | date = UnparsedDate s }
+
+        ParseDate ->
+            { model | date = parse model.date }
+
+        UnparseDate ->
+            { model | date = unparse model.date }
 
         ChangeName name ->
             { model | name = name }
@@ -52,18 +123,66 @@ update msg model =
 
 view : Model -> Element Msg
 view model =
-    column [ spacing 10 ]
-        [ infoView model.date ChangeDate
-        , infoView model.name ChangeName
-        , infoView model.batchSize ChangeBatchSize
+    column [ spacing 4, Font.size 24, Font.bold ]
+        [ dateView model.date
+        , infoView model.name "American Ale" ChangeName
+        , infoView model.batchSize "5 gallons" ChangeBatchSize
         ]
 
 
-infoView text onChange =
-    I.multiline [ alignTop ]
-        { onChange = onChange
-        , text = text
-        , placeholder = Nothing
+formatDate : Date -> String
+formatDate date =
+    case date of
+        UnparsedDate s ->
+            s
+
+        ParseErrorDate s ->
+            s
+
+        ParsedDate d ->
+            DateTime.formatDate False d
+
+
+dateView date =
+    I.text
+        ([ alignTop
+         , Border.width 0
+         , padding 6
+         , moveLeft 6
+         , Events.onFocus UnparseDate
+         , Events.onLoseFocus ParseDate
+         ]
+            ++ checkDate date
+        )
+        { onChange = ChangeDate
+        , text = formatDate date
+        , placeholder =
+            Just
+                (I.placeholder [ moveLeft 6 ]
+                    (text "January 1st, 1970 ")
+                )
         , label = I.labelHidden ""
-        , spellcheck = True
+        }
+
+
+checkDate date =
+    case date of
+        ParseErrorDate _ ->
+            [ Font.color (rgb 1 0 0), Font.underline ]
+
+        _ ->
+            []
+
+
+infoView info placeholder onChange =
+    I.text
+        [ alignTop
+        , Border.width 0
+        , padding 6
+        , moveLeft 6
+        ]
+        { onChange = onChange
+        , text = info
+        , placeholder = Just (I.placeholder [ moveLeft 6 ] (text placeholder))
+        , label = I.labelHidden ""
         }
