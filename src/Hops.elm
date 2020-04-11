@@ -1,4 +1,4 @@
-module Hops exposing (Model, Msg, init, update, view)
+module Hops exposing (Model, Msg, init, toObjecthashValue, update, view)
 
 import Array exposing (Array)
 import Array.Extra as Array
@@ -65,28 +65,20 @@ update : Msg -> Model -> Model
 update msg items =
     case msg of
         ChangeDescr idx descr ->
-            case Array.get idx items of
-                Nothing ->
-                    items
-
-                Just item ->
-                    Array.set idx { item | descr = descr } items
+            Array.update idx
+                (\item -> { item | descr = descr })
+                items
 
         ChangeTime idx time ->
-            case Array.get idx items of
-                Nothing ->
-                    items
-
-                Just item ->
-                    Array.set idx { item | time = time } items
+            Array.update idx
+                (\item -> { item | time = time })
+                items
 
         Add ->
             Array.push (Item "" "") items
 
         Remove idx ->
-            Array.append
-                (Array.slice 0 idx items)
-                (Array.slice (idx + 1) (Array.length items) items)
+            Array.removeAt idx items
 
 
 

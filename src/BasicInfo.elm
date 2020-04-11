@@ -1,4 +1,12 @@
-module BasicInfo exposing (Model, Msg, getDate, init, update, view)
+module BasicInfo exposing
+    ( Model
+    , Msg
+    , getDate
+    , init
+    , toObjecthashValue
+    , update
+    , view
+    )
 
 import DateTime
 import Dict

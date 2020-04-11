@@ -4,6 +4,7 @@ import Array as Array exposing (Array)
 import BasicInfo
 import Browser
 import Browser.Navigation as Nav
+import Dict
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -12,8 +13,12 @@ import Element.Input as I
 import Hops
 import Html
 import Html.Attributes as Html
+import Http
 import Ingredients
+import Json.Decode as Json
 import Logs
+import Objecthash exposing (objecthash)
+import Objecthash.Value as V
 import Task
 import Time
 import Url
@@ -44,19 +49,43 @@ type alias Model =
     , hops : Hops.Model
     , logs : Logs.Model
     , zone : Time.Zone
+    , savedHash : String
+    , id : String
     }
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ _ _ =
-    ( { basicInfo = BasicInfo.init
+    ( { id = "490cd76e3ea843d596d09d2c68733862"
+      , basicInfo = BasicInfo.init
       , ingredients = Ingredients.init
       , hops = Hops.init
       , logs = Logs.init
       , zone = Time.utc
+      , savedHash = ""
       }
     , Task.perform AdjustTimeZone Time.here
     )
+
+
+toObjecthashValue : Model -> Maybe V.Value
+toObjecthashValue model =
+    let
+        f basicInfo ingredients hops logs =
+            [ ( "basicInfo", basicInfo )
+            , ( "ingredients", ingredients )
+            , ( "hops", hops )
+            , ( "logs", logs )
+            ]
+                |> Dict.fromList
+                |> V.dict
+    in
+    Maybe.map4
+        f
+        (BasicInfo.toObjecthashValue model.basicInfo)
+        (Ingredients.toObjecthashValue model.ingredients)
+        (Just <| Hops.toObjecthashValue model.hops)
+        (Logs.toObjecthashValue model.logs)
 
 
 
@@ -64,13 +93,14 @@ init _ _ _ =
 
 
 type Msg
-    = GotIngredientsMsg Ingredients.Msg
+    = AdjustTimeZone Time.Zone
+    | Tick Time.Posix
+    | GotIngredientsMsg Ingredients.Msg
     | GotHopsMsg Hops.Msg
     | GotLogsMsg Logs.Msg
     | GotBasicInfoMsg BasicInfo.Msg
+    | SaveBeerResult (Result Http.Error PutResponse)
     | DoNothing
-    | AdjustTimeZone Time.Zone
-    | Tick Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -103,10 +133,58 @@ update msg model =
             , Cmd.none
             )
 
+        SaveBeerResult response ->
+            let
+                a =
+                    Debug.log ">" response
+            in
+            ( model, Cmd.none )
+
         DoNothing ->
             ( model, Cmd.none )
 
-        Tick posix ->
+        Tick _ ->
+            save model
+
+
+type alias PutResponse =
+    { id : String
+    , ok : Bool
+    , rev : String
+    }
+
+
+save model =
+    case toObjecthashValue model of
+        Just value ->
+            let
+                hash =
+                    objecthash value
+            in
+            if hash /= model.savedHash then
+                ( { model | savedHash = hash }
+                , Http.request
+                    { method = "PUT"
+                    , headers = []
+                    , url = "http://localhost:5984/brewlog/" ++ model.id
+                    , body = Http.jsonBody (V.toJsonValue value)
+                    , expect =
+                        Http.expectJson
+                            SaveBeerResult
+                            (Json.map3 PutResponse
+                                (Json.field "id" Json.string)
+                                (Json.field "ok" Json.bool)
+                                (Json.field "rev" Json.string)
+                            )
+                    , tracker = Nothing
+                    , timeout = Nothing
+                    }
+                )
+
+            else
+                ( model, Cmd.none )
+
+        Nothing ->
             ( model, Cmd.none )
 
 
@@ -172,7 +250,7 @@ box color w h =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Debug.log "1" Sub.none
+    Time.every 5000 Tick
 
 
 

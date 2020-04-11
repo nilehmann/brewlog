@@ -1,14 +1,17 @@
-module Logs exposing (Model, Msg, init, update, view)
+module Logs exposing (Model, Msg, init, toObjecthashValue, update, view)
 
 import Array exposing (Array)
 import Array.Extra as Array
 import DateTime exposing (DateTime)
+import Dict
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import Maybe.Extra as Maybe
+import Objecthash.Value as V
 import Task
 import Time exposing (Posix)
 
@@ -45,6 +48,27 @@ type EntryTime
     = ParsedTime DateTime
     | UnparsedTime String
     | ParseErrorTime String
+
+
+toObjecthashValue : Model -> Maybe V.Value
+toObjecthashValue model =
+    let
+        f entry =
+            case parse entry.time of
+                ParsedTime time ->
+                    [ ( "time", V.string (DateTime.unparse time) )
+                    , ( "descr", V.string entry.descr )
+                    ]
+                        |> Dict.fromList
+                        |> V.dict
+                        |> Just
+
+                _ ->
+                    Nothing
+    in
+    Array.mapToList f model
+        |> Maybe.combine
+        |> Maybe.map V.list
 
 
 unparse entryTime =

@@ -1,4 +1,4 @@
-module Ingredients exposing (Model, Msg, init, update, view)
+module Ingredients exposing (Model, Msg, init, toObjecthashValue, update, view)
 
 import Array exposing (Array)
 import Array.Extra as Array
@@ -9,6 +9,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import Maybe.Extra as Maybe
 import Measures
 import Objecthash.Value as V
 
@@ -47,6 +48,27 @@ type Amount
     = Parsed Measures.Measure
     | Unparsed String
     | ParseError String
+
+
+toObjecthashValue : Model -> Maybe V.Value
+toObjecthashValue model =
+    let
+        f ingredient =
+            case parse ingredient.amount of
+                Parsed measure ->
+                    [ ( "descr", V.string ingredient.descr )
+                    , ( "amount", V.string (Measures.unparse measure) )
+                    ]
+                        |> Dict.fromList
+                        |> V.dict
+                        |> Just
+
+                _ ->
+                    Nothing
+    in
+    Array.mapToList f model
+        |> Maybe.combine
+        |> Maybe.map V.list
 
 
 parse amount =
