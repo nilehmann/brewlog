@@ -12,6 +12,7 @@ import Element.Font as Font
 import Element.Input as I
 import Maybe.Extra as Maybe
 import Objecthash.Value as V
+import Parseable exposing (Parseable)
 import Task
 import Time exposing (Posix)
 
@@ -23,10 +24,10 @@ import Time exposing (Posix)
 init : Model
 init =
     Array.fromList
-        [ Entry (UnparsedTime "9:30") "Start Heating"
-        , Entry (UnparsedTime "10:00") "Start Boil"
-        , Entry (UnparsedTime "11:00") "Temp read 35"
-        , Entry (UnparsedTime "21:44") "Pitch yeast"
+        [ Entry (fromString "9:30") "Start Heating"
+        , Entry (fromString "10:00") "Start Boil"
+        , Entry (fromString "11:00") "Temp read 35"
+        , Entry (fromString "21:44") "Pitch yeast"
         ]
 
 
@@ -39,23 +40,17 @@ type alias Model =
 
 
 type alias Entry =
-    { time : EntryTime
+    { time : Parseable DateTime
     , descr : String
     }
-
-
-type EntryTime
-    = ParsedTime DateTime
-    | UnparsedTime String
-    | ParseErrorTime String
 
 
 toObjecthashValue : Model -> Maybe V.Value
 toObjecthashValue model =
     let
         f entry =
-            case parse entry.time of
-                ParsedTime time ->
+            case parse entry.time |> Parseable.toMaybe of
+                Just time ->
                     [ ( "time", V.string (DateTime.unparse time) )
                     , ( "descr", V.string entry.descr )
                     ]
@@ -63,7 +58,7 @@ toObjecthashValue model =
                         |> V.dict
                         |> Just
 
-                _ ->
+                Nothing ->
                     Nothing
     in
     Array.mapToList f model
@@ -71,25 +66,16 @@ toObjecthashValue model =
         |> Maybe.map V.list
 
 
-unparse entryTime =
-    case entryTime of
-        ParsedTime dateTime ->
-            UnparsedTime (DateTime.unparse dateTime)
-
-        _ ->
-            entryTime
+fromString =
+    Parseable.fromString DateTime.parse
 
 
-parse : EntryTime -> EntryTime
-parse entryTime =
-    case entryTime of
-        UnparsedTime str ->
-            DateTime.parse str
-                |> Maybe.map ParsedTime
-                |> Maybe.withDefault (ParseErrorTime str)
+parse =
+    Parseable.parse DateTime.parse
 
-        _ ->
-            entryTime
+
+unparse =
+    Parseable.unparse DateTime.unparse
 
 
 
@@ -117,7 +103,7 @@ update zone msg entries =
 
         ChangeTime idx time ->
             ( Array.update idx
-                (\entry -> { entry | time = UnparsedTime time })
+                (\entry -> { entry | time = Parseable.unparsed time })
                 entries
             , Cmd.none
             )
@@ -127,7 +113,7 @@ update zone msg entries =
 
         Add (Just time) ->
             ( Array.push
-                (Entry (ParsedTime (DateTime.fromPosix zone time)) "")
+                (Entry (Parseable.fromData (DateTime.fromPosix zone time)) "")
                 entries
             , Cmd.none
             )
@@ -211,26 +197,17 @@ entryView batchDate ( idx, entry ) =
 
 
 checkTime entryTime =
-    case entryTime of
-        ParseErrorTime _ ->
-            [ Font.color (rgb 1 0 0), Font.underline ]
+    if Parseable.isError entryTime then
+        [ Font.color (rgb 1 0 0), Font.underline ]
 
-        _ ->
-            []
+    else
+        []
 
 
 inputAttrs =
     [ alignTop, Border.width 0, padding 4, moveLeft 4 ]
 
 
-formatTime : Maybe DateTime.Date -> EntryTime -> String
+formatTime : Maybe DateTime.Date -> Parseable DateTime -> String
 formatTime batchDate entryTime =
-    case entryTime of
-        ParsedTime dateTime ->
-            DateTime.format batchDate dateTime
-
-        UnparsedTime str ->
-            str
-
-        ParseErrorTime str ->
-            str
+    Parseable.format (DateTime.format batchDate) entryTime

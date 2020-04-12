@@ -44,25 +44,27 @@ main =
 
 
 type alias Model =
-    { basicInfo : BasicInfo.Model
+    { id : String
+    , rev : Maybe String
+    , basicInfo : BasicInfo.Model
     , ingredients : Ingredients.Model
     , hops : Hops.Model
     , logs : Logs.Model
     , zone : Time.Zone
     , savedHash : String
-    , id : String
     }
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ _ _ =
     ( { id = "490cd76e3ea843d596d09d2c68733862"
+      , rev = Nothing
+      , savedHash = ""
       , basicInfo = BasicInfo.init
       , ingredients = Ingredients.init
       , hops = Hops.init
       , logs = Logs.init
       , zone = Time.utc
-      , savedHash = ""
       }
     , Task.perform AdjustTimeZone Time.here
     )
@@ -133,12 +135,13 @@ update msg model =
             , Cmd.none
             )
 
-        SaveBeerResult response ->
-            let
-                a =
-                    Debug.log ">" response
-            in
-            ( model, Cmd.none )
+        SaveBeerResult result ->
+            case Debug.log "save beer" result of
+                Ok r ->
+                    ( { model | rev = Just r.rev }, Cmd.none )
+
+                Err r ->
+                    ( model, Cmd.none )
 
         DoNothing ->
             ( model, Cmd.none )
@@ -166,7 +169,7 @@ save model =
                 , Http.request
                     { method = "PUT"
                     , headers = []
-                    , url = "http://localhost:5984/brewlog/" ++ model.id
+                    , url = saveUrl model.id model.rev
                     , body = Http.jsonBody (V.toJsonValue value)
                     , expect =
                         Http.expectJson
@@ -186,6 +189,19 @@ save model =
 
         Nothing ->
             ( model, Cmd.none )
+
+
+saveUrl id rev =
+    let
+        base =
+            "http://localhost:5984/brewlog/" ++ id
+    in
+    case rev of
+        Just r ->
+            base ++ "?rev=" ++ r
+
+        Nothing ->
+            base
 
 
 
@@ -251,7 +267,3 @@ box color w h =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Time.every 5000 Tick
-
-
-
--- Time.every 5000 Tick
