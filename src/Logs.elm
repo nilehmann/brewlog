@@ -24,11 +24,7 @@ import Time exposing (Posix)
 init : Model
 init =
     Array.fromList
-        [ Entry (fromString "9:30") "Start Heating"
-        , Entry (fromString "10:00") "Start Boil"
-        , Entry (fromString "11:00") "Temp read 35"
-        , Entry (fromString "21:44") "Pitch yeast"
-        ]
+        []
 
 
 

@@ -21,13 +21,7 @@ import Objecthash.Value as V
 init : Model
 init =
     Array.fromList
-        [ Ingredient ("5 pounds" |> Unparsed |> parse) "American extract malt"
-        , Ingredient ("1 pounds" |> Unparsed |> parse) "crystal malt"
-        , Ingredient ("2 teaspoons" |> Unparsed |> parse) "gypsum"
-        , Ingredient ("1.5  ounces" |> Unparsed |> parse) "fuggles hops"
-        , Ingredient ("1.5 ounces" |> Unparsed |> parse) "Hallertau hops"
-        , Ingredient ("1.5 ounce" |> Unparsed |> parse) "Got ucovered brad ale yeast"
-        ]
+        []
 
 
 

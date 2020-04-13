@@ -37,9 +37,9 @@ type Date
 
 init : Model
 init =
-    { date = UnparsedDate "30 Feb 2018" |> parse
-    , name = "Grizzly Beer Ale"
-    , batchSize = "5 gallons (19l)"
+    { date = UnparsedDate ""
+    , name = ""
+    , batchSize = ""
     }
 
 

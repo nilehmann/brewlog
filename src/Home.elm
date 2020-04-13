@@ -4,21 +4,9 @@ import Api
 import Browser
 import DateTime
 import Element exposing (..)
+import Element.Font as Font
 import Http
 import Json.Decode as D
-
-
-
--- MAIN
-
-
-main =
-    Browser.document
-        { init = init
-        , update = update
-        , view = view
-        , subscriptions = subscriptions
-        }
 
 
 
@@ -31,23 +19,21 @@ type alias Model =
 
 type alias Beer =
     { id : String
-    , rev : String
     , name : String
     , batchSize : String
     , date : String
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
+init : ( Model, Cmd Msg )
+init =
     ( [], Api.view GotBeers beerDecoder )
 
 
 beerDecoder : D.Decoder Beer
 beerDecoder =
-    D.map5 Beer
+    D.map4 Beer
         (D.field "id" D.string)
-        (D.field "rev" D.string)
         (D.field "name" D.string)
         (D.field "batchSize" D.string)
         (D.field "date" D.string)
@@ -77,30 +63,34 @@ update msg model =
 -- VIEW
 
 
+view : Model -> Element Msg
 view model =
-    { title = "BrewLog"
-    , body = [ layout [] (page model) ]
-    }
-
-
-page model =
     table []
         { data = model
         , columns =
-            [ { header = text "Name"
+            [ { header = tableHeader "Name"
               , width = fill
-              , view = text << .name
+              , view =
+                    \beer ->
+                        link []
+                            { url = "/beer/" ++ beer.id
+                            , label = text beer.name
+                            }
               }
-            , { header = text "Batch Size"
+            , { header = tableHeader "Batch Size"
               , width = fill
               , view = text << .batchSize
               }
-            , { header = text "Date"
+            , { header = tableHeader "Date"
               , width = fill
               , view = text << .date
               }
             ]
         }
+
+
+tableHeader t =
+    el [ Font.bold ] (text t)
 
 
 

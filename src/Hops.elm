@@ -17,10 +17,7 @@ import Objecthash.Value as V
 init : Model
 init =
     Array.fromList
-        [ Item "60 min" "1 ounce fuggels hops"
-        , Item "30 min" "1 1/2 ounce hallertau hops"
-        , Item "0 min" "Irish moss"
-        ]
+        []
 
 
 

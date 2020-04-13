@@ -1,4 +1,4 @@
-module Beer exposing (..)
+module Beer exposing (Model, Msg, init, update, view)
 
 import Api
 import Array as Array exposing (Array)
@@ -26,21 +26,6 @@ import Url
 
 
 
--- MAIN
-
-
-main =
-    Browser.application
-        { init = init
-        , update = update
-        , view = view
-        , subscriptions = subscriptions
-        , onUrlRequest = \_ -> DoNothing
-        , onUrlChange = \_ -> DoNothing
-        }
-
-
-
 -- MODEL
 
 
@@ -56,9 +41,9 @@ type alias Model =
     }
 
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ _ _ =
-    ( { id = "490cd76e3ea843d596d09d2c68733862"
+init : String -> ( Model, Cmd Msg )
+init id =
+    ( { id = id
       , rev = Nothing
       , savedHash = ""
       , basicInfo = BasicInfo.init
@@ -181,35 +166,9 @@ fontHref =
     "https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap"
 
 
-view : Model -> Browser.Document Msg
+view : Model -> Element Msg
 view model =
-    { title = "BrewLog"
-    , body =
-        [ htmlLink
-            [ Html.href fontHref
-            , Html.rel "stylesheet"
-            ]
-        , layout
-            [ Font.family [ Font.typeface "Indie Flower" ], Font.size 20 ]
-            (page model)
-        ]
-    }
-
-
-htmlLink a =
-    Html.node "link" a []
-
-
-page model =
-    column [ width fill, spacing 20 ] [ header, body model ]
-
-
-header =
-    box (rgb 0 0 0) fill (px 100)
-
-
-body model =
-    column [ spacing 60, centerX, width (px 920) ]
+    column [ spacing 60, width fill ]
         [ map GotBasicInfoMsg (BasicInfo.view model.basicInfo)
         , receipe model
         , map GotLogsMsg (Logs.view model.logs (BasicInfo.getDate model.basicInfo))
@@ -223,10 +182,6 @@ receipe model =
         , el [ alignRight, alignTop, width (fillPortion 1) ]
             (map GotHopsMsg (Hops.view model.hops))
         ]
-
-
-box color w h =
-    el [ Background.color color, width w, height h ] (html (Html.div [] []))
 
 
 
