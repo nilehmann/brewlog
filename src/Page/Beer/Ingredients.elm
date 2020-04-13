@@ -1,4 +1,11 @@
-module Ingredients exposing (Model, Msg, init, toObjecthashValue, update, view)
+module Page.Beer.Ingredients exposing
+    ( Model
+    , Msg
+    , init
+    , toObjecthashValue
+    , update
+    , view
+    )
 
 import Array exposing (Array)
 import Array.Extra as Array

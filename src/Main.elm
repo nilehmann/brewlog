@@ -1,14 +1,14 @@
 module Main exposing (main)
 
-import Beer
 import Browser
 import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
-import Home
 import Html
 import Html.Attributes as Html
+import Page.Beer as Beer
+import Page.Home as Home
 import Route exposing (Route)
 import Url
 

@@ -1,4 +1,4 @@
-module Home exposing (..)
+module Page.Home exposing (..)
 
 import Api
 import Browser

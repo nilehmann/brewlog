@@ -1,4 +1,4 @@
-module BasicInfo exposing
+module Page.Beer.BasicInfo exposing
     ( Model
     , Msg
     , getDate

@@ -1,8 +1,7 @@
-module Beer exposing (Model, Msg, init, update, view)
+module Page.Beer exposing (Model, Msg, init, update, view)
 
 import Api
 import Array as Array exposing (Array)
-import BasicInfo
 import Browser
 import Browser.Navigation as Nav
 import Dict
@@ -11,15 +10,16 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as I
-import Hops
 import Html
 import Html.Attributes as Html
 import Http
-import Ingredients
 import Json.Decode as Json
-import Logs
 import Objecthash exposing (objecthash)
 import Objecthash.Value as V
+import Page.Beer.BasicInfo as BasicInfo
+import Page.Beer.Hops as Hops
+import Page.Beer.Ingredients as Ingredients
+import Page.Beer.Logs as Logs
 import Task
 import Time
 import Url

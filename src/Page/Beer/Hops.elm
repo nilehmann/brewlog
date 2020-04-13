@@ -1,4 +1,4 @@
-module Hops exposing (Model, Msg, init, toObjecthashValue, update, view)
+module Page.Beer.Hops exposing (Model, Msg, init, toObjecthashValue, update, view)
 
 import Array exposing (Array)
 import Array.Extra as Array
