@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Api
 import Array as Array exposing (Array)
 import BasicInfo
 import Browser
@@ -101,7 +102,7 @@ type Msg
     | GotHopsMsg Hops.Msg
     | GotLogsMsg Logs.Msg
     | GotBasicInfoMsg BasicInfo.Msg
-    | SaveBeerResult (Result Http.Error PutResponse)
+    | SaveBeerResult (Result Http.Error Api.DocPutResult)
     | DoNothing
 
 
@@ -150,13 +151,6 @@ update msg model =
             save model
 
 
-type alias PutResponse =
-    { id : String
-    , ok : Bool
-    , rev : String
-    }
-
-
 save model =
     case toObjecthashValue model of
         Just value ->
@@ -166,22 +160,10 @@ save model =
             in
             if hash /= model.savedHash then
                 ( { model | savedHash = hash }
-                , Http.request
-                    { method = "PUT"
-                    , headers = []
-                    , url = saveUrl model.id model.rev
-                    , body = Http.jsonBody (V.toJsonValue value)
-                    , expect =
-                        Http.expectJson
-                            SaveBeerResult
-                            (Json.map3 PutResponse
-                                (Json.field "id" Json.string)
-                                (Json.field "ok" Json.bool)
-                                (Json.field "rev" Json.string)
-                            )
-                    , tracker = Nothing
-                    , timeout = Nothing
-                    }
+                , Api.documentPut SaveBeerResult
+                    model.id
+                    model.rev
+                    (V.toJsonValue value)
                 )
 
             else
@@ -189,19 +171,6 @@ save model =
 
         Nothing ->
             ( model, Cmd.none )
-
-
-saveUrl id rev =
-    let
-        base =
-            "http://localhost:5984/brewlog/" ++ id
-    in
-    case rev of
-        Just r ->
-            base ++ "?rev=" ++ r
-
-        Nothing ->
-            base
 
 
 
