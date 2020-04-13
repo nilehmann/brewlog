@@ -1,4 +1,4 @@
-module Route exposing (Route(..), fromUrl)
+module Route exposing (Route(..), fromUrl, toString)
 
 import Url exposing (Url)
 import Url.Parser exposing (..)
@@ -19,3 +19,13 @@ parser =
         [ map Home top
         , map Beer (s "beer" </> string)
         ]
+
+
+toString : Route -> String
+toString route =
+    case route of
+        Home ->
+            "/"
+
+        Beer id ->
+            "/beer" ++ id

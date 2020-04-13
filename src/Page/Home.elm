@@ -5,8 +5,14 @@ import Browser
 import DateTime
 import Element exposing (..)
 import Element.Font as Font
+import Element.Input as I
 import Http
 import Json.Decode as D
+import Random
+import Random.Char as Random
+import Random.Extra as Random
+import Random.String as Random
+import Route
 
 
 
@@ -45,18 +51,34 @@ beerDecoder =
 
 type Msg
     = GotBeers (Result Http.Error (Api.ViewResult Beer))
+    | NewBeer
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GotBeers result ->
-            case Debug.log ">" result of
-                Ok viewResult ->
-                    ( List.map .value viewResult.rows, Cmd.none )
+        NewBeer ->
+            ( model, Cmd.none )
 
-                Err _ ->
-                    ( model, Cmd.none )
+        GotBeers (Ok result) ->
+            ( List.map .value result.rows, Cmd.none )
+
+        GotBeers (Err err) ->
+            let
+                _ =
+                    Debug.log ">" err
+            in
+            ( model, Cmd.none )
+
+
+randomId : Random.Generator String
+randomId =
+    Random.string 10 randomAlphaNum
+
+
+randomAlphaNum : Random.Generator Char
+randomAlphaNum =
+    Random.choices Random.lowerCaseLatin [ Random.char 48 57 ]
 
 
 
@@ -65,6 +87,17 @@ update msg model =
 
 view : Model -> Element Msg
 view model =
+    column []
+        [ I.button
+            []
+            { onPress = Just NewBeer
+            , label = text "New"
+            }
+        , viewBeers model
+        ]
+
+
+viewBeers model =
     table []
         { data = model
         , columns =

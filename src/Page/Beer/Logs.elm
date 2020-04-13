@@ -1,4 +1,12 @@
-module Page.Beer.Logs exposing (Model, Msg, init, toObjecthashValue, update, view)
+module Page.Beer.Logs exposing
+    ( Model
+    , Msg
+    , decoder
+    , init
+    , toObjecthashValue
+    , update
+    , view
+    )
 
 import Array exposing (Array)
 import Array.Extra as Array
@@ -10,6 +18,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import Json.Decode as D
 import Maybe.Extra as Maybe
 import Objecthash.Value as V
 import Parseable exposing (Parseable)
@@ -39,6 +48,15 @@ type alias Entry =
     { time : Parseable DateTime
     , descr : String
     }
+
+
+decoder : D.Decoder Model
+decoder =
+    D.array
+        (D.map2 Entry
+            (D.map fromString (D.field "time" D.string))
+            (D.field "descr" D.string)
+        )
 
 
 toObjecthashValue : Model -> Maybe V.Value

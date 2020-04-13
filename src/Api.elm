@@ -1,9 +1,18 @@
-module Api exposing (DocPutResult, ViewResult, documentPut, view)
+module Api exposing
+    ( DocPutResult
+    , DocResult
+    , ViewResult
+    , document
+    , documentPut
+    , view
+    )
 
 import Http
 import Json.Decode as D
 import Json.Encode as E
 import Maybe.Extra as Maybe
+import Url
+import Url.Builder exposing (crossOrigin, string)
 
 
 baseUrl =
@@ -34,7 +43,7 @@ view :
     -> Cmd msg
 view f rowDecoder =
     Http.get
-        { url = baseUrl ++ "/_design/beers/_view/basicInfo"
+        { url = crossOrigin baseUrl [ "_design", "beers", "_view", "basicInfo" ] []
         , expect =
             Http.expectJson
                 f
@@ -68,10 +77,14 @@ documentPut :
     -> E.Value
     -> Cmd msg
 documentPut f id rev body =
+    let
+        queryParams =
+            rev |> Maybe.map (string "rev") |> Maybe.toList
+    in
     Http.request
         { method = "PUT"
         , headers = []
-        , url = baseUrl ++ "/" ++ id ++ Maybe.unwrap "" (\r -> "?rev=" ++ r) rev
+        , url = crossOrigin baseUrl [ id ] queryParams
         , body = Http.jsonBody body
         , expect =
             Http.expectJson
@@ -83,4 +96,29 @@ documentPut f id rev body =
                 )
         , tracker = Nothing
         , timeout = Nothing
+        }
+
+
+type alias DocResult a =
+    { id : String
+    , rev : String
+    , doc : a
+    }
+
+
+document :
+    (Result Http.Error (DocResult a) -> msg)
+    -> D.Decoder a
+    -> String
+    -> Cmd msg
+document f docDecoder id =
+    Http.get
+        { url = crossOrigin baseUrl [ id ] []
+        , expect =
+            Http.expectJson f
+                (D.map3 DocResult
+                    (D.field "_id" D.string)
+                    (D.field "_rev" D.string)
+                    docDecoder
+                )
         }

@@ -1,6 +1,7 @@
 module Page.Beer.Ingredients exposing
     ( Model
     , Msg
+    , decoder
     , init
     , toObjecthashValue
     , update
@@ -16,6 +17,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import Json.Decode as D
 import Maybe.Extra as Maybe
 import Measures
 import Objecthash.Value as V
@@ -49,6 +51,16 @@ type Amount
     = Parsed Measures.Measure
     | Unparsed String
     | ParseError String
+
+
+decoder : D.Decoder Model
+decoder =
+    D.array
+        (D.map2
+            Ingredient
+            (D.map (parse << Unparsed) (D.field "amount" D.string))
+            (D.field "amount" D.string)
+        )
 
 
 toObjecthashValue : Model -> Maybe V.Value

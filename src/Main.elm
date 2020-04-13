@@ -71,6 +71,10 @@ update msg model =
         ( UrlChanged url, _ ) ->
             changeRouteTo (Route.fromUrl url) model
 
+        ( GotBeerMsg subMsg, Beer subModel ) ->
+            Beer.update subMsg subModel
+                |> updateWith Beer GotBeerMsg model
+
         ( GotHomeMsg subMsg, Home subModel ) ->
             Home.update subMsg subModel
                 |> updateWith Home GotHomeMsg model

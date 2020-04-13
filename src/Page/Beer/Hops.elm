@@ -1,4 +1,12 @@
-module Page.Beer.Hops exposing (Model, Msg, init, toObjecthashValue, update, view)
+module Page.Beer.Hops exposing
+    ( Model
+    , Msg
+    , decoder
+    , init
+    , toObjecthashValue
+    , update
+    , view
+    )
 
 import Array exposing (Array)
 import Array.Extra as Array
@@ -7,6 +15,7 @@ import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as I
+import Json.Decode as D
 import Objecthash.Value as V
 
 
@@ -32,6 +41,15 @@ type alias Item =
     { time : String
     , descr : String
     }
+
+
+decoder : D.Decoder Model
+decoder =
+    D.array
+        (D.map2 Item
+            (D.field "time" D.string)
+            (D.field "descr" D.string)
+        )
 
 
 toObjecthashValue : Model -> V.Value

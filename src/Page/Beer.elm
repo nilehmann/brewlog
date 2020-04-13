@@ -13,7 +13,7 @@ import Element.Input as I
 import Html
 import Html.Attributes as Html
 import Http
-import Json.Decode as Json
+import Json.Decode as D
 import Objecthash exposing (objecthash)
 import Objecthash.Value as V
 import Page.Beer.BasicInfo as BasicInfo
@@ -30,34 +30,49 @@ import Url
 
 
 type alias Model =
-    { id : String
-    , rev : Maybe String
-    , basicInfo : BasicInfo.Model
+    { zone : Time.Zone
+    , state : State
+    }
+
+
+type State
+    = Fetched MetaData Beer
+    | NotFetched String
+
+
+type alias MetaData =
+    { id : String, rev : Maybe String, savedHash : String }
+
+
+type alias Beer =
+    { basicInfo : BasicInfo.Model
     , ingredients : Ingredients.Model
     , hops : Hops.Model
     , logs : Logs.Model
-    , zone : Time.Zone
-    , savedHash : String
     }
 
 
 init : String -> ( Model, Cmd Msg )
 init id =
-    ( { id = id
-      , rev = Nothing
-      , savedHash = ""
-      , basicInfo = BasicInfo.init
-      , ingredients = Ingredients.init
-      , hops = Hops.init
-      , logs = Logs.init
-      , zone = Time.utc
-      }
-    , Task.perform AdjustTimeZone Time.here
+    ( { zone = Time.utc, state = NotFetched id }
+    , Cmd.batch
+        [ Task.perform AdjustTimeZone Time.here
+        , Api.document BeerFetched beerDecoder id
+        ]
     )
 
 
-toObjecthashValue : Model -> Maybe V.Value
-toObjecthashValue model =
+beerDecoder : D.Decoder Beer
+beerDecoder =
+    D.map4 Beer
+        (D.field "basicInfo" BasicInfo.decoder)
+        (D.field "ingredients" Ingredients.decoder)
+        (D.field "hops" Hops.decoder)
+        (D.field "logs" Logs.decoder)
+
+
+toObjecthashValue : Beer -> Maybe V.Value
+toObjecthashValue beer =
     let
         f basicInfo ingredients hops logs =
             [ ( "basicInfo", basicInfo )
@@ -70,10 +85,10 @@ toObjecthashValue model =
     in
     Maybe.map4
         f
-        (BasicInfo.toObjecthashValue model.basicInfo)
-        (Ingredients.toObjecthashValue model.ingredients)
-        (Just <| Hops.toObjecthashValue model.hops)
-        (Logs.toObjecthashValue model.logs)
+        (BasicInfo.toObjecthashValue beer.basicInfo)
+        (Ingredients.toObjecthashValue beer.ingredients)
+        (Just <| Hops.toObjecthashValue beer.hops)
+        (Logs.toObjecthashValue beer.logs)
 
 
 
@@ -83,79 +98,121 @@ toObjecthashValue model =
 type Msg
     = AdjustTimeZone Time.Zone
     | Tick Time.Posix
-    | GotIngredientsMsg Ingredients.Msg
+    | GotBeerMsg BeerMsg
+    | BeerFetched (Result Http.Error (Api.DocResult Beer))
+    | SaveBeerResult (Result Http.Error Api.DocPutResult)
+
+
+type BeerMsg
+    = GotIngredientsMsg Ingredients.Msg
     | GotHopsMsg Hops.Msg
     | GotLogsMsg Logs.Msg
     | GotBasicInfoMsg BasicInfo.Msg
-    | SaveBeerResult (Result Http.Error Api.DocPutResult)
-    | DoNothing
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        AdjustTimeZone zone ->
+    case ( msg, model.state ) of
+        ( AdjustTimeZone zone, _ ) ->
             ( { model | zone = zone }, Cmd.none )
 
+        ( GotBeerMsg subMsg, Fetched metadata beer ) ->
+            let
+                ( newBeer, subCmd ) =
+                    updateBeer model.zone subMsg beer
+            in
+            ( { model | state = Fetched metadata newBeer }, subCmd )
+
+        ( BeerFetched result, _ ) ->
+            case Debug.log "beer fetched" result of
+                Ok docResult ->
+                    let
+                        metadata =
+                            { id = docResult.id
+                            , rev = Just docResult.rev
+                            , savedHash = ""
+                            }
+                    in
+                    ( { model | state = Fetched metadata docResult.doc }
+                    , Cmd.none
+                    )
+
+                Err r ->
+                    ( model, Cmd.none )
+
+        ( SaveBeerResult result, Fetched metadata beer ) ->
+            case Debug.log "save beer" result of
+                Ok r ->
+                    ( { model | state = Fetched { metadata | rev = Just r.rev } beer }
+                    , Cmd.none
+                    )
+
+                Err r ->
+                    ( model, Cmd.none )
+
+        ( Tick _, Fetched metadata beer ) ->
+            let
+                ( newMetadata, cmd ) =
+                    saveBeer metadata beer
+            in
+            ( { model | state = Fetched metadata beer }
+            , cmd
+            )
+
+        -- Ignore messages in the wrong state
+        ( _, _ ) ->
+            ( model, Cmd.none )
+
+
+saveBeer : MetaData -> Beer -> ( MetaData, Cmd Msg )
+saveBeer metadata beer =
+    case toObjecthashValue beer of
+        Just value ->
+            let
+                hash =
+                    objecthash value
+            in
+            if hash /= metadata.savedHash then
+                ( { metadata | savedHash = hash }
+                , Api.documentPut SaveBeerResult
+                    metadata.id
+                    metadata.rev
+                    (V.toJsonValue value)
+                )
+
+            else
+                ( metadata, Cmd.none )
+
+        Nothing ->
+            ( metadata, Cmd.none )
+
+
+updateBeer : Time.Zone -> BeerMsg -> Beer -> ( Beer, Cmd Msg )
+updateBeer zone msg beer =
+    case msg of
         GotIngredientsMsg subMsg ->
-            ( { model | ingredients = Ingredients.update subMsg model.ingredients }
+            ( { beer | ingredients = Ingredients.update subMsg beer.ingredients }
             , Cmd.none
             )
 
         GotHopsMsg subMsg ->
-            ( { model | hops = Hops.update subMsg model.hops }
+            ( { beer | hops = Hops.update subMsg beer.hops }
             , Cmd.none
             )
 
         GotLogsMsg subMsg ->
             let
                 ( subModel, subCmd ) =
-                    Logs.update model.zone subMsg model.logs
+                    Logs.update zone subMsg beer.logs
             in
-            ( { model | logs = subModel }
-            , Cmd.map GotLogsMsg subCmd
+            ( { beer | logs = subModel }
+            , Cmd.map (GotBeerMsg << GotLogsMsg) subCmd
             )
 
         GotBasicInfoMsg subMsg ->
-            ( { model | basicInfo = BasicInfo.update subMsg model.basicInfo }
+            ( { beer | basicInfo = BasicInfo.update subMsg beer.basicInfo }
             , Cmd.none
             )
-
-        SaveBeerResult result ->
-            case Debug.log "save beer" result of
-                Ok r ->
-                    ( { model | rev = Just r.rev }, Cmd.none )
-
-                Err r ->
-                    ( model, Cmd.none )
-
-        DoNothing ->
-            ( model, Cmd.none )
-
-        Tick _ ->
-            save model
-
-
-save model =
-    case toObjecthashValue model of
-        Just value ->
-            let
-                hash =
-                    objecthash value
-            in
-            if hash /= model.savedHash then
-                ( { model | savedHash = hash }
-                , Api.documentPut SaveBeerResult
-                    model.id
-                    model.rev
-                    (V.toJsonValue value)
-                )
-
-            else
-                ( model, Cmd.none )
-
-        Nothing ->
-            ( model, Cmd.none )
 
 
 
@@ -168,19 +225,30 @@ fontHref =
 
 view : Model -> Element Msg
 view model =
+    case model.state of
+        NotFetched _ ->
+            none
+
+        Fetched _ beer ->
+            map GotBeerMsg (viewFetched beer)
+
+
+viewFetched : Beer -> Element BeerMsg
+viewFetched beer =
     column [ spacing 60, width fill ]
-        [ map GotBasicInfoMsg (BasicInfo.view model.basicInfo)
-        , receipe model
-        , map GotLogsMsg (Logs.view model.logs (BasicInfo.getDate model.basicInfo))
+        [ map GotBasicInfoMsg (BasicInfo.view beer.basicInfo)
+        , receipe beer
+        , map GotLogsMsg (Logs.view beer.logs (BasicInfo.getDate beer.basicInfo))
         ]
 
 
-receipe model =
+receipe : Beer -> Element BeerMsg
+receipe beer =
     row [ spacing 40, width fill ]
         [ el [ alignLeft, alignTop, width (fillPortion 1) ]
-            (map GotIngredientsMsg (Ingredients.view model.ingredients))
+            (map GotIngredientsMsg (Ingredients.view beer.ingredients))
         , el [ alignRight, alignTop, width (fillPortion 1) ]
-            (map GotHopsMsg (Hops.view model.hops))
+            (map GotHopsMsg (Hops.view beer.hops))
         ]
 
 

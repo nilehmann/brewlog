@@ -1,6 +1,7 @@
 module Page.Beer.BasicInfo exposing
     ( Model
     , Msg
+    , decoder
     , getDate
     , init
     , toObjecthashValue
@@ -15,6 +16,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import Json.Decode as D
 import Objecthash.Value as V
 
 
@@ -41,6 +43,14 @@ init =
     , name = ""
     , batchSize = ""
     }
+
+
+decoder : D.Decoder Model
+decoder =
+    D.map3 Model
+        (D.map (parse << UnparsedDate) (D.field "date" D.string))
+        (D.field "name" D.string)
+        (D.field "batchSize" D.string)
 
 
 toObjecthashValue : Model -> Maybe V.Value
