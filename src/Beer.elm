@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Beer exposing (..)
 
 import Api
 import Array as Array exposing (Array)
