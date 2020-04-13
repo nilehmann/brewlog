@@ -84,7 +84,23 @@ view model =
 
 
 page model =
-    text "here"
+    table []
+        { data = model
+        , columns =
+            [ { header = text "Name"
+              , width = fill
+              , view = text << .name
+              }
+            , { header = text "Batch Size"
+              , width = fill
+              , view = text << .batchSize
+              }
+            , { header = text "Date"
+              , width = fill
+              , view = text << .date
+              }
+            ]
+        }
 
 
 
