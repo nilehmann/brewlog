@@ -137,7 +137,7 @@ unparse =
 
 unparseDateTime : DateTime -> String
 unparseDateTime dateTime =
-    Date.unparse dateTime.date ++ ", " ++ unparseTime dateTime.time
+    Date.unparseDate dateTime.date ++ ", " ++ unparseTime dateTime.time
 
 
 unpackTime : Time -> ( String, String )

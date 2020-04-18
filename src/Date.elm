@@ -4,12 +4,16 @@ module Date exposing
     , compare
     , format
     , fromPosix
+    , fromString
     , parse
     , parser
+    , toString
     , unparse
+    , unparseDate
     )
 
 import Dict
+import Parseable exposing (Parseable)
 import Parser
     exposing
         ( (|.)
@@ -67,8 +71,23 @@ compare d1 d2 =
 -- PARSER
 
 
-parse : String -> Maybe Date
-parse str =
+fromString : String -> Parseable Date
+fromString =
+    Parseable.fromString parseDate
+
+
+toString : Parseable Date -> Maybe String
+toString =
+    Parseable.toString unparseDate
+
+
+parse : Parseable Date -> Parseable Date
+parse =
+    Parseable.parse parseDate
+
+
+parseDate : String -> Maybe Date
+parseDate str =
     Parser.run (succeed cap |. spaces |= parser |. spaces |. end) str
         |> Result.toMaybe
 
@@ -153,18 +172,23 @@ checkYear str =
 -- UNPARSE
 
 
-unpack : Date -> ( String, String, String )
-unpack d =
-    ( String.fromInt d.day, monthToString d.month, String.fromInt d.year )
+unparse : Parseable Date -> Parseable Date
+unparse =
+    Parseable.unparse unparseDate
 
 
-unparse : Date -> String
-unparse d =
+unparseDate : Date -> String
+unparseDate d =
     let
         ( day, month, year ) =
             unpack d
     in
     day ++ " " ++ String.left 3 month ++ " " ++ year
+
+
+unpack : Date -> ( String, String, String )
+unpack d =
+    ( String.fromInt d.day, monthToString d.month, String.fromInt d.year )
 
 
 

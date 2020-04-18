@@ -9,7 +9,7 @@ module Page.Beer.BasicInfo exposing
     , view
     )
 
-import Date
+import Date exposing (Date)
 import Dict
 import Element exposing (..)
 import Element.Border as Border
@@ -18,6 +18,7 @@ import Element.Font as Font
 import Element.Input as I
 import Json.Decode as D
 import Objecthash.Value as V
+import Parseable exposing (Parseable)
 
 
 
@@ -25,21 +26,15 @@ import Objecthash.Value as V
 
 
 type alias Model =
-    { date : Date
+    { date : Parseable Date
     , name : String
     , batchSize : String
     }
 
 
-type Date
-    = ParsedDate Date.Date
-    | UnparsedDate String
-    | ParseErrorDate String
-
-
 init : Date.Date -> Model
 init date =
-    { date = ParsedDate date
+    { date = Parseable.fromData date
     , name = ""
     , batchSize = ""
     }
@@ -48,60 +43,29 @@ init date =
 decoder : D.Decoder Model
 decoder =
     D.map3 Model
-        (D.map (parse << UnparsedDate) (D.field "date" D.string))
+        (D.map Date.fromString (D.field "date" D.string))
         (D.field "name" D.string)
         (D.field "batchSize" D.string)
 
 
 toObjecthashValue : Model -> Maybe V.Value
 toObjecthashValue model =
-    case parse model.date of
-        ParsedDate d ->
-            [ ( "date", V.string (Date.unparse d) )
-            , ( "name", V.string model.name )
-            , ( "batchSize", V.string model.batchSize )
-            ]
-                |> Dict.fromList
-                |> V.dict
-                |> Just
-
-        _ ->
-            Nothing
+    Date.parse model.date
+        |> Date.toString
+        |> Maybe.map
+            (\d ->
+                [ ( "date", V.string d )
+                , ( "name", V.string model.name )
+                , ( "batchSize", V.string model.batchSize )
+                ]
+                    |> Dict.fromList
+                    |> V.dict
+            )
 
 
 getDate : Model -> Maybe Date.Date
 getDate model =
-    case model.date of
-        UnparsedDate str ->
-            Date.parse str
-
-        ParsedDate date ->
-            Just date
-
-        ParseErrorDate _ ->
-            Nothing
-
-
-parse : Date -> Date
-parse date =
-    case date of
-        UnparsedDate str ->
-            Date.parse str
-                |> Maybe.map ParsedDate
-                |> Maybe.withDefault (ParseErrorDate str)
-
-        _ ->
-            date
-
-
-unparse : Date -> Date
-unparse date =
-    case date of
-        ParsedDate d ->
-            UnparsedDate (Date.unparse d)
-
-        _ ->
-            date
+    Parseable.getData model.date
 
 
 
@@ -120,13 +84,13 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         ChangeDate s ->
-            { model | date = UnparsedDate s }
+            { model | date = Parseable.unparsed s }
 
         ParseDate ->
-            { model | date = parse model.date }
+            { model | date = Date.parse model.date }
 
         UnparseDate ->
-            { model | date = unparse model.date }
+            { model | date = Date.unparse model.date }
 
         ChangeName name ->
             { model | name = name }
@@ -148,20 +112,12 @@ view model =
         ]
 
 
-formatDate : Date -> String
-formatDate date =
-    case date of
-        UnparsedDate s ->
-            s
-
-        ParseErrorDate s ->
-            s
-
-        ParsedDate d ->
-            Date.format False d
+formatDate : Parseable Date -> String
+formatDate =
+    Parseable.format (Date.format False)
 
 
-viewDate : Date -> Element Msg
+viewDate : Parseable Date -> Element Msg
 viewDate date =
     I.text
         ([ alignTop
@@ -184,14 +140,13 @@ viewDate date =
         }
 
 
-checkDate : Date -> List (Attribute Msg)
+checkDate : Parseable Date -> List (Attribute Msg)
 checkDate date =
-    case date of
-        ParseErrorDate _ ->
-            [ Font.color (rgb 1 0 0), Font.underline ]
+    if Parseable.isError date then
+        [ Font.color (rgb 1 0 0), Font.underline ]
 
-        _ ->
-            []
+    else
+        []
 
 
 viewInfo : String -> String -> (String -> Msg) -> Element Msg

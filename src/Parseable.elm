@@ -3,6 +3,7 @@ module Parseable exposing
     , format
     , fromData
     , fromString
+    , getData
     , isError
     , parse
     , toMaybe
@@ -93,9 +94,14 @@ toMaybe p =
 
 toString : (a -> String) -> Parseable a -> Maybe String
 toString unparser p =
+    Maybe.map unparser (getData p)
+
+
+getData : Parseable a -> Maybe a
+getData p =
     case p of
         Parsed a ->
-            Just (unparser a)
+            Just a
 
         _ ->
             Nothing
