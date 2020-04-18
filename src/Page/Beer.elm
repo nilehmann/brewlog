@@ -1,7 +1,7 @@
 module Page.Beer exposing (Model, Msg, init, subscriptions, update, view)
 
 import Api
-import DateTime
+import Date
 import Dict
 import Element exposing (..)
 import Http
@@ -62,7 +62,7 @@ init session id new =
 
 initBeer : Time.Zone -> Time.Posix -> Beer
 initBeer zone posix =
-    { basicInfo = BasicInfo.init (DateTime.dateFromPosix zone posix)
+    { basicInfo = BasicInfo.init (Date.fromPosix zone posix)
     , ingredients = Ingredients.init
     , hops = Hops.init
     , logs = Logs.init

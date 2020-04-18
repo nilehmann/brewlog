@@ -10,6 +10,7 @@ module Page.Beer.Logs exposing
 
 import Array exposing (Array)
 import Array.Extra as Array
+import Date exposing (Date)
 import DateTime exposing (DateTime)
 import Dict
 import Element exposing (..)
@@ -155,7 +156,7 @@ update zone msg entries =
 -- VIEW
 
 
-view : Model -> Maybe DateTime.Date -> Element Msg
+view : Model -> Maybe Date -> Element Msg
 view entries batchDate =
     let
         entryViews =
@@ -178,7 +179,7 @@ viewAddEntry =
         }
 
 
-viewEntry : Maybe DateTime.Date -> ( Int, Entry ) -> Element Msg
+viewEntry : Maybe Date -> ( Int, Entry ) -> Element Msg
 viewEntry batchDate ( idx, entry ) =
     row [ spacing 10 ]
         [ I.button
@@ -227,6 +228,6 @@ inputAttrs =
     [ alignTop, Border.width 0, padding 4, moveLeft 4 ]
 
 
-formatTime : Maybe DateTime.Date -> Parseable DateTime -> String
+formatTime : Maybe Date -> Parseable DateTime -> String
 formatTime batchDate entryTime =
     Parseable.format (DateTime.format batchDate) entryTime

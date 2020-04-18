@@ -9,7 +9,7 @@ module Page.Beer.BasicInfo exposing
     , view
     )
 
-import DateTime
+import Date
 import Dict
 import Element exposing (..)
 import Element.Border as Border
@@ -32,12 +32,12 @@ type alias Model =
 
 
 type Date
-    = ParsedDate DateTime.Date
+    = ParsedDate Date.Date
     | UnparsedDate String
     | ParseErrorDate String
 
 
-init : DateTime.Date -> Model
+init : Date.Date -> Model
 init date =
     { date = ParsedDate date
     , name = ""
@@ -57,7 +57,7 @@ toObjecthashValue : Model -> Maybe V.Value
 toObjecthashValue model =
     case parse model.date of
         ParsedDate d ->
-            [ ( "date", V.string (DateTime.unparseDate d) )
+            [ ( "date", V.string (Date.unparse d) )
             , ( "name", V.string model.name )
             , ( "batchSize", V.string model.batchSize )
             ]
@@ -69,11 +69,11 @@ toObjecthashValue model =
             Nothing
 
 
-getDate : Model -> Maybe DateTime.Date
+getDate : Model -> Maybe Date.Date
 getDate model =
     case model.date of
         UnparsedDate str ->
-            DateTime.parseDate str
+            Date.parse str
 
         ParsedDate date ->
             Just date
@@ -86,7 +86,7 @@ parse : Date -> Date
 parse date =
     case date of
         UnparsedDate str ->
-            DateTime.parseDate str
+            Date.parse str
                 |> Maybe.map ParsedDate
                 |> Maybe.withDefault (ParseErrorDate str)
 
@@ -98,7 +98,7 @@ unparse : Date -> Date
 unparse date =
     case date of
         ParsedDate d ->
-            UnparsedDate (DateTime.unparseDate d)
+            UnparsedDate (Date.unparse d)
 
         _ ->
             date
@@ -158,7 +158,7 @@ formatDate date =
             s
 
         ParsedDate d ->
-            DateTime.formatDate False d
+            Date.format False d
 
 
 viewDate : Date -> Element Msg
