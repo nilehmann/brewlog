@@ -59,11 +59,11 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NewBeer id ->
-            ( model, Nav.pushUrl model.key (Route.toString (Route.NewBeer id)) )
-
         ClickedNewBeer ->
             ( model, Random.generate NewBeer randomId )
+
+        NewBeer id ->
+            ( model, Nav.pushUrl model.key (Route.toString (Route.NewBeer id)) )
 
         GotBeers (Ok result) ->
             ( { model | beers = List.map .value result.rows }, Cmd.none )

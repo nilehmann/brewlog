@@ -2,6 +2,7 @@ module DateTime exposing
     ( Date
     , DateTime
     , Time
+    , dateFromPosix
     , format
     , formatDate
     , fromPosix
@@ -45,11 +46,7 @@ parse str =
 
 fromPosix : Time.Zone -> Time.Posix -> DateTime
 fromPosix zone posix =
-    { date =
-        { day = Time.toDay zone posix
-        , month = Time.toMonth zone posix
-        , year = Time.toYear zone posix
-        }
+    { date = dateFromPosix zone posix
     , time =
         { hour = Time.toHour zone posix
         , minute = Time.toMinute zone posix
@@ -82,6 +79,14 @@ type alias Date =
     { day : Int
     , month : Time.Month
     , year : Int
+    }
+
+
+dateFromPosix : Time.Zone -> Time.Posix -> Date
+dateFromPosix zone posix =
+    { day = Time.toDay zone posix
+    , month = Time.toMonth zone posix
+    , year = Time.toYear zone posix
     }
 
 

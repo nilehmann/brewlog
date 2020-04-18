@@ -10,6 +10,9 @@ import Html.Attributes as Html
 import Page.Beer as Beer
 import Page.Home as Home
 import Route exposing (Route)
+import Session exposing (Session)
+import Task
+import Time
 import Url
 
 
@@ -29,10 +32,9 @@ main =
 -- MODEL
 
 
-type alias Model =
-    { key : Nav.Key
-    , page : Page
-    }
+type Model
+    = Initializing
+    | Initialized Session Page
 
 
 type Page
@@ -43,15 +45,17 @@ type Page
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
-    changeRouteTo (Route.fromUrl url) { key = key, page = Blank }
+    ( Initializing, Task.perform (Initialize url << Session key) Time.here )
 
 
 
+-- changeRouteTo (Route.fromUrl url) { key = key, page = Blank }
 -- UPDATE
 
 
 type Msg
-    = LinkClicked Browser.UrlRequest
+    = Initialize Url.Url Session
+    | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | GotHomeMsg Home.Msg
     | GotBeerMsg Beer.Msg
@@ -59,59 +63,62 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case ( msg, model.page ) of
-        ( LinkClicked urlRequest, _ ) ->
+    case ( msg, model ) of
+        ( Initialize url session, Initializing ) ->
+            changeRouteTo (Route.fromUrl url) session
+
+        ( LinkClicked urlRequest, Initialized session _ ) ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( model, Nav.pushUrl model.key (Url.toString url) )
+                    ( model, Nav.pushUrl session.key (Url.toString url) )
 
                 Browser.External href ->
                     ( model, Nav.load href )
 
-        ( UrlChanged url, _ ) ->
-            changeRouteTo (Route.fromUrl url) model
+        ( UrlChanged url, Initialized session _ ) ->
+            changeRouteTo (Route.fromUrl url) session
 
-        ( GotBeerMsg subMsg, Beer subModel ) ->
+        ( GotBeerMsg subMsg, Initialized session (Beer subModel) ) ->
             Beer.update subMsg subModel
-                |> updateWith Beer GotBeerMsg model
+                |> updateWith Beer GotBeerMsg session
 
-        ( GotHomeMsg subMsg, Home subModel ) ->
+        ( GotHomeMsg subMsg, Initialized session (Home subModel) ) ->
             Home.update subMsg subModel
-                |> updateWith Home GotHomeMsg model
+                |> updateWith Home GotHomeMsg session
 
         -- Ignore messages sent to the wrong page
         ( _, _ ) ->
             ( model, Cmd.none )
 
 
-changeRouteTo : Maybe Route -> Model -> ( Model, Cmd Msg )
-changeRouteTo route model =
+changeRouteTo : Maybe Route -> Session -> ( Model, Cmd Msg )
+changeRouteTo route session =
     case route of
         Just Route.Home ->
-            Home.init model.key
-                |> updateWith Home GotHomeMsg model
+            Home.init session.key
+                |> updateWith Home GotHomeMsg session
 
         Just (Route.Beer id) ->
-            Beer.init id False
-                |> updateWith Beer GotBeerMsg model
+            Beer.init session id False
+                |> updateWith Beer GotBeerMsg session
 
         Just (Route.NewBeer id) ->
-            Beer.init id True
-                |> updateWith Beer GotBeerMsg model
+            Beer.init session id True
+                |> updateWith Beer GotBeerMsg session
 
         Nothing ->
-            Home.init model.key
-                |> updateWith Home GotHomeMsg model
+            Home.init session.key
+                |> updateWith Home GotHomeMsg session
 
 
 updateWith :
     (subModel -> Page)
     -> (subMsg -> Msg)
-    -> Model
+    -> Session
     -> ( subModel, Cmd subMsg )
     -> ( Model, Cmd Msg )
-updateWith toPage toMsg model ( subModel, subCmd ) =
-    ( { model | page = toPage subModel }
+updateWith toPage toMsg session ( subModel, subCmd ) =
+    ( Initialized session (toPage subModel)
     , Cmd.map toMsg subCmd
     )
 
@@ -152,14 +159,17 @@ headerView =
 
 bodyView : Model -> Element Msg
 bodyView model =
-    case model.page of
-        Home subModel ->
+    case model of
+        Initialized _ (Home subModel) ->
             Element.map GotHomeMsg (Home.view subModel)
 
-        Beer subModel ->
+        Initialized _ (Beer subModel) ->
             Element.map GotBeerMsg (Beer.view subModel)
 
-        Blank ->
+        Initialized _ Blank ->
+            none
+
+        Initializing ->
             none
 
 
@@ -174,8 +184,8 @@ box color w h =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.page of
-        Beer _ ->
+    case model of
+        Initialized _ (Beer _) ->
             Sub.map GotBeerMsg Beer.subscriptions
 
         _ ->

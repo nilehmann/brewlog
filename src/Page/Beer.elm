@@ -1,6 +1,7 @@
 module Page.Beer exposing (Model, Msg, init, subscriptions, update, view)
 
 import Api
+import DateTime
 import Dict
 import Element exposing (..)
 import Http
@@ -11,6 +12,7 @@ import Page.Beer.BasicInfo as BasicInfo
 import Page.Beer.Hops as Hops
 import Page.Beer.Ingredients as Ingredients
 import Page.Beer.Logs as Logs
+import Session exposing (Session)
 import Task
 import Time
 
@@ -26,8 +28,8 @@ type alias Model =
 
 
 type State
-    = Fetched MetaData Beer
-    | NotFetched String
+    = Initializing
+    | Fetched MetaData Beer
 
 
 type alias MetaData =
@@ -45,42 +47,31 @@ type alias Beer =
     }
 
 
-init : String -> Bool -> ( Model, Cmd Msg )
-init id new =
+init : Session -> String -> Bool -> ( Model, Cmd Msg )
+init session id new =
     if new then
-        ( { zone = Time.utc
-          , state =
-                Fetched
-                    { id = id
-                    , rev = Nothing
-                    , savedHash = initBeerHash
-                    }
-                    initBeer
-          }
-        , Task.perform AdjustTimeZone Time.here
+        ( { zone = session.zone, state = Initializing }
+        , Task.perform (NewBeer id) Time.now
         )
 
     else
-        ( { zone = Time.utc, state = NotFetched id }
-        , Cmd.batch
-            [ Task.perform AdjustTimeZone Time.here
-            , Api.document BeerFetched beerDecoder id
-            ]
+        ( { zone = session.zone, state = Initializing }
+        , Api.document BeerFetched beerDecoder id
         )
 
 
-initBeer : Beer
-initBeer =
-    { basicInfo = BasicInfo.init
+initBeer : Time.Zone -> Time.Posix -> Beer
+initBeer zone posix =
+    { basicInfo = BasicInfo.init (DateTime.dateFromPosix zone posix)
     , ingredients = Ingredients.init
     , hops = Hops.init
     , logs = Logs.init
     }
 
 
-initBeerHash : String
-initBeerHash =
-    toObjecthashValue initBeer
+beerHash : Beer -> String
+beerHash beer =
+    toObjecthashValue beer
         |> Maybe.map Objecthash.objecthash
         |> Maybe.withDefault ""
 
@@ -119,8 +110,8 @@ toObjecthashValue beer =
 
 
 type Msg
-    = AdjustTimeZone Time.Zone
-    | Tick Time.Posix
+    = Tick Time.Posix
+    | NewBeer String Time.Posix
     | GotBeerMsg BeerMsg
     | BeerFetched (Result Http.Error (Api.DocResult Beer))
     | SaveBeerResult (Result Http.Error Api.DocPutResult)
@@ -136,8 +127,19 @@ type BeerMsg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model.state ) of
-        ( AdjustTimeZone zone, _ ) ->
-            ( { model | zone = zone }, Cmd.none )
+        ( NewBeer id posix, Initializing ) ->
+            let
+                beer =
+                    initBeer model.zone posix
+
+                hash =
+                    beerHash beer
+            in
+            ( { zone = model.zone
+              , state = Fetched (MetaData id Nothing hash) beer
+              }
+            , Cmd.none
+            )
 
         ( GotBeerMsg subMsg, Fetched metadata beer ) ->
             let
@@ -245,7 +247,7 @@ updateBeer zone msg beer =
 view : Model -> Element Msg
 view model =
     case model.state of
-        NotFetched _ ->
+        Initializing ->
             none
 
         Fetched _ beer ->

@@ -37,9 +37,9 @@ type Date
     | ParseErrorDate String
 
 
-init : Model
-init =
-    { date = UnparsedDate ""
+init : DateTime.Date -> Model
+init date =
+    { date = ParsedDate date
     , name = ""
     , batchSize = ""
     }
