@@ -142,9 +142,9 @@ update msg model =
 view : Model -> Element Msg
 view model =
     column [ spacing 4, Font.size 24, Font.bold ]
-        [ dateView model.date
-        , infoView model.name "American Ale" ChangeName
-        , infoView model.batchSize "5 gallons" ChangeBatchSize
+        [ viewDate model.date
+        , viewInfo model.name "American Ale" ChangeName
+        , viewInfo model.batchSize "5 gallons" ChangeBatchSize
         ]
 
 
@@ -161,7 +161,8 @@ formatDate date =
             DateTime.formatDate False d
 
 
-dateView date =
+viewDate : Date -> Element Msg
+viewDate date =
     I.text
         ([ alignTop
          , Border.width 0
@@ -183,6 +184,7 @@ dateView date =
         }
 
 
+checkDate : Date -> List (Attribute Msg)
 checkDate date =
     case date of
         ParseErrorDate _ ->
@@ -192,7 +194,8 @@ checkDate date =
             []
 
 
-infoView info placeholder onChange =
+viewInfo : String -> String -> (String -> Msg) -> Element Msg
+viewInfo info placeholder onChange =
     I.text
         [ alignTop
         , Border.width 0

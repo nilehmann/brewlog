@@ -22,8 +22,6 @@ import Parser
         , chompWhile
         , end
         , getChompedString
-        , map
-        , oneOf
         , problem
         , spaces
         , succeed
@@ -34,7 +32,9 @@ import Time
 
 
 type alias DateTime =
-    { date : Date, time : Time }
+    { date : Date
+    , time : Time
+    }
 
 
 parse : String -> Maybe DateTime
@@ -67,6 +67,7 @@ parser =
         |= timeParser
 
 
+cap : DateTime -> DateTime
 cap dateTime =
     { time = capTime dateTime.time
     , date = capDate dateTime.date
@@ -84,6 +85,7 @@ type alias Date =
     }
 
 
+capDate : Date -> Date
 capDate d =
     { d | day = clamp 1 (daysInMonth d.month d.year) d.day }
 
@@ -94,6 +96,7 @@ parseDate str =
         |> Result.toMaybe
 
 
+compareDate : Date -> Date -> Order
 compareDate d1 d2 =
     let
         a =
@@ -191,6 +194,7 @@ type alias Time =
     }
 
 
+capTime : Time -> Time
 capTime t =
     { hour = t.hour, minute = clamp 0 59 t.minute }
 
@@ -252,6 +256,7 @@ unpackTime t =
     ( String.fromInt t.hour, String.fromInt t.minute )
 
 
+unparseTime : Time -> String
 unparseTime t =
     let
         ( hour, minute ) =
@@ -295,6 +300,7 @@ formatDate short date =
 -- MISC
 
 
+monthToInt : Time.Month -> Int
 monthToInt month =
     case month of
         Time.Jan ->
@@ -334,6 +340,7 @@ monthToInt month =
             11
 
 
+daysInMonth : Time.Month -> Int -> Int
 daysInMonth month year =
     case month of
         Time.Jan ->
@@ -377,6 +384,7 @@ daysInMonth month year =
             31
 
 
+isLeap : Int -> Bool
 isLeap year =
     if remainderBy year 4 /= 0 then
         False
@@ -384,13 +392,11 @@ isLeap year =
     else if remainderBy year 100 /= 0 then
         True
 
-    else if remainderBy year 400 /= 0 then
-        False
-
     else
-        True
+        remainderBy year 400 == 0
 
 
+monthToString : Time.Month -> String
 monthToString month =
     case month of
         Time.Jan ->

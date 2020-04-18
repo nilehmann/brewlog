@@ -1,8 +1,6 @@
-module Page.Home exposing (..)
+module Page.Home exposing (Model, Msg, init, update, view)
 
 import Api
-import Browser
-import DateTime
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as I
@@ -12,7 +10,6 @@ import Random
 import Random.Char as Random
 import Random.Extra as Random
 import Random.String as Random
-import Route
 
 
 
@@ -97,6 +94,7 @@ view model =
         ]
 
 
+viewBeers : Model -> Element Msg
 viewBeers model =
     table []
         { data = model
@@ -122,13 +120,6 @@ viewBeers model =
         }
 
 
+tableHeader : String -> Element Msg
 tableHeader t =
     el [ Font.bold ] (text t)
-
-
-
--- SUBSCRIPTIONS
-
-
-subscriptions model =
-    Sub.none

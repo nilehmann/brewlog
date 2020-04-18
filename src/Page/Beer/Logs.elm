@@ -13,7 +13,6 @@ import Array.Extra as Array
 import DateTime exposing (DateTime)
 import Dict
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
@@ -63,31 +62,33 @@ toObjecthashValue : Model -> Maybe V.Value
 toObjecthashValue model =
     let
         f entry =
-            case parse entry.time |> Parseable.toMaybe of
-                Just time ->
-                    [ ( "time", V.string (DateTime.unparse time) )
-                    , ( "descr", V.string entry.descr )
-                    ]
-                        |> Dict.fromList
-                        |> V.dict
-                        |> Just
-
-                Nothing ->
-                    Nothing
+            parse entry.time
+                |> Parseable.toMaybe
+                |> Maybe.map
+                    (\time ->
+                        [ ( "time", V.string (DateTime.unparse time) )
+                        , ( "descr", V.string entry.descr )
+                        ]
+                            |> Dict.fromList
+                            |> V.dict
+                    )
     in
     Array.mapToList f model
         |> Maybe.combine
         |> Maybe.map V.list
 
 
+fromString : String -> Parseable DateTime
 fromString =
     Parseable.fromString DateTime.parse
 
 
+parse : Parseable DateTime -> Parseable DateTime
 parse =
     Parseable.parse DateTime.parse
 
 
+unparse : Parseable DateTime -> Parseable DateTime
 unparse =
     Parseable.unparse DateTime.unparse
 
@@ -158,25 +159,27 @@ view : Model -> Maybe DateTime.Date -> Element Msg
 view entries batchDate =
     let
         entryViews =
-            List.map (entryView batchDate) (Array.toIndexedList entries)
+            List.map (viewEntry batchDate) (Array.toIndexedList entries)
     in
     column [ spacing 6, width fill ]
-        ([ headerView ] ++ entryViews ++ [ addEntryView ])
+        (viewHeader :: entryViews ++ [ viewAddEntry ])
 
 
-headerView =
+viewHeader : Element Msg
+viewHeader =
     el [ Font.size 30, height (px 40) ] (text "Logs")
 
 
-addEntryView =
+viewAddEntry : Element Msg
+viewAddEntry =
     I.button [ centerX, height (px 40) ]
         { onPress = Just (Add Nothing)
         , label = text "Add"
         }
 
 
-entryView : Maybe DateTime.Date -> ( Int, Entry ) -> Element Msg
-entryView batchDate ( idx, entry ) =
+viewEntry : Maybe DateTime.Date -> ( Int, Entry ) -> Element Msg
+viewEntry batchDate ( idx, entry ) =
     row [ spacing 10 ]
         [ I.button
             [ alignTop, moveDown 5 ]
@@ -210,6 +213,7 @@ entryView batchDate ( idx, entry ) =
         ]
 
 
+checkTime : Parseable DateTime -> List (Attribute Msg)
 checkTime entryTime =
     if Parseable.isError entryTime then
         [ Font.color (rgb 1 0 0), Font.underline ]
@@ -218,6 +222,7 @@ checkTime entryTime =
         []
 
 
+inputAttrs : List (Attribute Msg)
 inputAttrs =
     [ alignTop, Border.width 0, padding 4, moveLeft 4 ]
 

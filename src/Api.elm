@@ -11,10 +11,10 @@ import Http
 import Json.Decode as D
 import Json.Encode as E
 import Maybe.Extra as Maybe
-import Url
 import Url.Builder exposing (crossOrigin, string)
 
 
+baseUrl : String
 baseUrl =
     "http://localhost:5984/brewlog"
 

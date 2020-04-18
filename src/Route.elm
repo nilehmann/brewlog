@@ -14,6 +14,7 @@ fromUrl =
     parse parser
 
 
+parser : Parser (Route -> a) a
 parser =
     oneOf
         [ map Home top

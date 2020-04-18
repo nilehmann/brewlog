@@ -6,7 +6,9 @@ import Parser.Dict exposing (fromDict)
 
 
 type alias Measure =
-    { value : Float, unit : Unit }
+    { value : Float
+    , unit : Unit
+    }
 
 
 type Unit
@@ -72,6 +74,7 @@ format =
     unparse
 
 
+unitToString : Unit -> String
 unitToString unit =
     case unit of
         Pounds ->

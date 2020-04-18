@@ -73,7 +73,7 @@ format formatter p =
 isError : Parseable a -> Bool
 isError p =
     case p of
-        ParseError s ->
+        ParseError _ ->
             True
 
         _ ->

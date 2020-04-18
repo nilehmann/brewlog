@@ -1,17 +1,8 @@
-module Page.Beer exposing (Model, Msg, init, update, view)
+module Page.Beer exposing (Model, Msg, init, subscriptions, update, view)
 
 import Api
-import Array as Array exposing (Array)
-import Browser
-import Browser.Navigation as Nav
 import Dict
 import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
-import Element.Input as I
-import Html
-import Html.Attributes as Html
 import Http
 import Json.Decode as D
 import Objecthash exposing (objecthash)
@@ -22,7 +13,6 @@ import Page.Beer.Ingredients as Ingredients
 import Page.Beer.Logs as Logs
 import Task
 import Time
-import Url
 
 
 
@@ -41,7 +31,10 @@ type State
 
 
 type alias MetaData =
-    { id : String, rev : Maybe String, savedHash : String }
+    { id : String
+    , rev : Maybe String
+    , savedHash : String
+    }
 
 
 type alias Beer =
@@ -137,7 +130,7 @@ update msg model =
                     , Cmd.none
                     )
 
-                Err r ->
+                Err _ ->
                     ( model, Cmd.none )
 
         ( SaveBeerResult result, Fetched metadata beer ) ->
@@ -147,12 +140,12 @@ update msg model =
                     , Cmd.none
                     )
 
-                Err r ->
+                Err _ ->
                     ( model, Cmd.none )
 
         ( Tick _, Fetched metadata beer ) ->
             let
-                ( newMetadata, cmd ) =
+                ( _, cmd ) =
                     saveBeer metadata beer
             in
             ( { model | state = Fetched metadata beer }
@@ -219,10 +212,6 @@ updateBeer zone msg beer =
 -- VIEW
 
 
-fontHref =
-    "https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap"
-
-
 view : Model -> Element Msg
 view model =
     case model.state of
@@ -256,6 +245,6 @@ receipe beer =
 -- SUBSCRIPTIONS
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions : Sub Msg
+subscriptions =
     Time.every 5000 Tick

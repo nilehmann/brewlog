@@ -13,6 +13,7 @@ import Route exposing (Route)
 import Url
 
 
+main : Program () Model Msg
 main =
     Browser.application
         { init = init
@@ -54,7 +55,6 @@ type Msg
     | UrlChanged Url.Url
     | GotHomeMsg Home.Msg
     | GotBeerMsg Beer.Msg
-    | DoNothing
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -78,9 +78,6 @@ update msg model =
         ( GotHomeMsg subMsg, Home subModel ) ->
             Home.update subMsg subModel
                 |> updateWith Home GotHomeMsg model
-
-        ( DoNothing, _ ) ->
-            ( model, Cmd.none )
 
         -- Ignore messages sent to the wrong page
         ( _, _ ) ->
@@ -139,14 +136,17 @@ view model =
     }
 
 
+fontHref : String
 fontHref =
     "https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap"
 
 
+headerView : Element Msg
 headerView =
     box (rgb 0 0 0) fill (px 100)
 
 
+bodyView : Model -> Element Msg
 bodyView model =
     case model.page of
         Home subModel ->
@@ -159,6 +159,7 @@ bodyView model =
             none
 
 
+box : Color -> Length -> Length -> Element Msg
 box color w h =
     el [ Background.color color, width w, height h ] (html (Html.div [] []))
 
@@ -169,4 +170,9 @@ box color w h =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    case model.page of
+        Beer _ ->
+            Sub.map GotBeerMsg Beer.subscriptions
+
+        _ ->
+            Sub.none

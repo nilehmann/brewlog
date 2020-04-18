@@ -12,7 +12,6 @@ import Array exposing (Array)
 import Array.Extra as Array
 import Dict
 import Element exposing (..)
-import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
@@ -84,6 +83,11 @@ toObjecthashValue model =
         |> Maybe.map V.list
 
 
+
+-- parse : String -> Parseable Measure
+
+
+parse : Amount -> Amount
 parse amount =
     case amount of
         Unparsed s ->
@@ -95,6 +99,7 @@ parse amount =
             amount
 
 
+unparse : Amount -> Amount
 unparse amount =
     case amount of
         Parsed measure ->
@@ -157,17 +162,19 @@ view : Model -> Element Msg
 view ingredients =
     let
         ingredientViews =
-            List.map ingredientView (Array.toIndexedList ingredients)
+            List.map viewIngredient (Array.toIndexedList ingredients)
     in
     column [ spacing 6, width fill ]
-        ([ headerView ] ++ ingredientViews ++ [ addIngredientView ])
+        (viewHeader :: ingredientViews ++ [ viewAddIngredient ])
 
 
-headerView =
+viewHeader : Element Msg
+viewHeader =
     el [ Font.size 30, height (px 40) ] (text "Ingredients")
 
 
-addIngredientView =
+viewAddIngredient : Element Msg
+viewAddIngredient =
     I.button
         [ centerX, height (px 40) ]
         { onPress = Just Add
@@ -175,8 +182,8 @@ addIngredientView =
         }
 
 
-ingredientView : ( Int, Ingredient ) -> Element Msg
-ingredientView ( idx, ingredient ) =
+viewIngredient : ( Int, Ingredient ) -> Element Msg
+viewIngredient ( idx, ingredient ) =
     row [ spacing 10 ]
         [ I.button
             [ alignTop, moveDown 5 ]
@@ -219,6 +226,7 @@ ingredientView ( idx, ingredient ) =
         ]
 
 
+checkAmount : Amount -> List (Attribute Msg)
 checkAmount amount =
     case amount of
         ParseError _ ->
@@ -228,6 +236,7 @@ checkAmount amount =
             []
 
 
+formatAmount : Amount -> String
 formatAmount amount =
     case amount of
         Parsed measure ->

@@ -104,25 +104,27 @@ view : Model -> Element Msg
 view items =
     let
         itemViews =
-            Array.indexedMapToList itemView items
+            Array.indexedMapToList viewItem items
     in
     column [ spacing 6, width fill ]
-        ([ headerView ] ++ itemViews ++ [ addItemView ])
+        (viewHeader :: itemViews ++ [ viewAddItem ])
 
 
-headerView =
+viewHeader : Element Msg
+viewHeader =
     el [ Font.size 30, height (px 40) ] (text "Hop Schedule")
 
 
-addItemView =
+viewAddItem : Element Msg
+viewAddItem =
     I.button [ centerX, height (px 40) ]
         { onPress = Just Add
         , label = text "Add"
         }
 
 
-itemView : Int -> Item -> Element Msg
-itemView idx ingredient =
+viewItem : Int -> Item -> Element Msg
+viewItem idx ingredient =
     row [ spacing 10 ]
         [ I.button
             [ alignTop, moveDown 5 ]
