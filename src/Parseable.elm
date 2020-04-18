@@ -6,6 +6,7 @@ module Parseable exposing
     , isError
     , parse
     , toMaybe
+    , toString
     , unparse
     , unparsed
     )
@@ -85,6 +86,16 @@ toMaybe p =
     case p of
         Parsed a ->
             Just a
+
+        _ ->
+            Nothing
+
+
+toString : (a -> String) -> Parseable a -> Maybe String
+toString unparser p =
+    case p of
+        Parsed a ->
+            Just (unparser a)
 
         _ ->
             Nothing

@@ -54,7 +54,7 @@ decoder : D.Decoder Model
 decoder =
     D.array
         (D.map2 Entry
-            (D.map fromString (D.field "time" D.string))
+            (D.map DateTime.fromString (D.field "time" D.string))
             (D.field "descr" D.string)
         )
 
@@ -63,11 +63,11 @@ toObjecthashValue : Model -> Maybe V.Value
 toObjecthashValue model =
     let
         f entry =
-            parse entry.time
-                |> Parseable.toMaybe
+            DateTime.parse entry.time
+                |> DateTime.toString
                 |> Maybe.map
                     (\time ->
-                        [ ( "time", V.string (DateTime.unparse time) )
+                        [ ( "time", V.string time )
                         , ( "descr", V.string entry.descr )
                         ]
                             |> Dict.fromList
@@ -77,21 +77,6 @@ toObjecthashValue model =
     Array.mapToList f model
         |> Maybe.combine
         |> Maybe.map V.list
-
-
-fromString : String -> Parseable DateTime
-fromString =
-    Parseable.fromString DateTime.parse
-
-
-parse : Parseable DateTime -> Parseable DateTime
-parse =
-    Parseable.parse DateTime.parse
-
-
-unparse : Parseable DateTime -> Parseable DateTime
-unparse =
-    Parseable.unparse DateTime.unparse
 
 
 
@@ -139,14 +124,14 @@ update zone msg entries =
 
         UnparseTime idx ->
             ( Array.update idx
-                (\entry -> { entry | time = unparse entry.time })
+                (\entry -> { entry | time = DateTime.unparse entry.time })
                 entries
             , Cmd.none
             )
 
         ParseTime idx ->
             ( Array.update idx
-                (\entry -> { entry | time = parse entry.time })
+                (\entry -> { entry | time = DateTime.parse entry.time })
                 entries
             , Cmd.none
             )
