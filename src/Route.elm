@@ -7,6 +7,7 @@ import Url.Parser exposing (..)
 type Route
     = Home
     | Beer String
+    | NewBeer String
 
 
 fromUrl : Url -> Maybe Route
@@ -19,6 +20,7 @@ parser =
     oneOf
         [ map Home top
         , map Beer (s "beer" </> string)
+        , map NewBeer (s "beer" </> string </> s "new")
         ]
 
 
@@ -30,3 +32,6 @@ toString route =
 
         Beer id ->
             "/beer" ++ id
+
+        NewBeer id ->
+            "/beer/" ++ id ++ "/new"

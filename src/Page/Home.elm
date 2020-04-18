@@ -1,6 +1,7 @@
 module Page.Home exposing (Model, Msg, init, update, view)
 
 import Api
+import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as I
@@ -10,6 +11,7 @@ import Random
 import Random.Char as Random
 import Random.Extra as Random
 import Random.String as Random
+import Route
 
 
 
@@ -17,7 +19,9 @@ import Random.String as Random
 
 
 type alias Model =
-    List Beer
+    { key : Nav.Key
+    , beers : List Beer
+    }
 
 
 type alias Beer =
@@ -28,9 +32,9 @@ type alias Beer =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( [], Api.view GotBeers beerDecoder )
+init : Nav.Key -> ( Model, Cmd Msg )
+init key =
+    ( { key = key, beers = [] }, Api.view GotBeers beerDecoder )
 
 
 beerDecoder : D.Decoder Beer
@@ -48,17 +52,21 @@ beerDecoder =
 
 type Msg
     = GotBeers (Result Http.Error (Api.ViewResult Beer))
-    | NewBeer
+    | NewBeer String
+    | ClickedNewBeer
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NewBeer ->
-            ( model, Cmd.none )
+        NewBeer id ->
+            ( model, Nav.pushUrl model.key (Route.toString (Route.NewBeer id)) )
+
+        ClickedNewBeer ->
+            ( model, Random.generate NewBeer randomId )
 
         GotBeers (Ok result) ->
-            ( List.map .value result.rows, Cmd.none )
+            ( { model | beers = List.map .value result.rows }, Cmd.none )
 
         GotBeers (Err err) ->
             let
@@ -87,7 +95,7 @@ view model =
     column []
         [ I.button
             []
-            { onPress = Just NewBeer
+            { onPress = Just ClickedNewBeer
             , label = text "New"
             }
         , viewBeers model
@@ -97,7 +105,7 @@ view model =
 viewBeers : Model -> Element Msg
 viewBeers model =
     table []
-        { data = model
+        { data = model.beers
         , columns =
             [ { header = tableHeader "Name"
               , width = fill

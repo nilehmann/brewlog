@@ -45,14 +45,44 @@ type alias Beer =
     }
 
 
-init : String -> ( Model, Cmd Msg )
-init id =
-    ( { zone = Time.utc, state = NotFetched id }
-    , Cmd.batch
-        [ Task.perform AdjustTimeZone Time.here
-        , Api.document BeerFetched beerDecoder id
-        ]
-    )
+init : String -> Bool -> ( Model, Cmd Msg )
+init id new =
+    if new then
+        ( { zone = Time.utc
+          , state =
+                Fetched
+                    { id = id
+                    , rev = Nothing
+                    , savedHash = initBeerHash
+                    }
+                    initBeer
+          }
+        , Task.perform AdjustTimeZone Time.here
+        )
+
+    else
+        ( { zone = Time.utc, state = NotFetched id }
+        , Cmd.batch
+            [ Task.perform AdjustTimeZone Time.here
+            , Api.document BeerFetched beerDecoder id
+            ]
+        )
+
+
+initBeer : Beer
+initBeer =
+    { basicInfo = BasicInfo.init
+    , ingredients = Ingredients.init
+    , hops = Hops.init
+    , logs = Logs.init
+    }
+
+
+initBeerHash : String
+initBeerHash =
+    toObjecthashValue initBeer
+        |> Maybe.map Objecthash.objecthash
+        |> Maybe.withDefault ""
 
 
 beerDecoder : D.Decoder Beer

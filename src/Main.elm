@@ -88,15 +88,19 @@ changeRouteTo : Maybe Route -> Model -> ( Model, Cmd Msg )
 changeRouteTo route model =
     case route of
         Just Route.Home ->
-            Home.init
+            Home.init model.key
                 |> updateWith Home GotHomeMsg model
 
         Just (Route.Beer id) ->
-            Beer.init id
+            Beer.init id False
+                |> updateWith Beer GotBeerMsg model
+
+        Just (Route.NewBeer id) ->
+            Beer.init id True
                 |> updateWith Beer GotBeerMsg model
 
         Nothing ->
-            Home.init
+            Home.init model.key
                 |> updateWith Home GotHomeMsg model
 
 
