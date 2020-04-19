@@ -12,6 +12,7 @@ module Page.Beer.BasicInfo exposing
 import Date exposing (Date)
 import Dict
 import Element exposing (..)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
@@ -105,10 +106,10 @@ update msg model =
 
 view : Model -> Element Msg
 view model =
-    column [ spacing 4, Font.size 24, Font.bold ]
-        [ viewDate model.date
-        , viewInfo model.name "American Ale" ChangeName
-        , viewInfo model.batchSize "5 gallons" ChangeBatchSize
+    column [ spacing -6, Font.size 30, Font.bold ]
+        [ el [ moveUp 0 ] (viewDate model.date)
+        , el [ moveUp 0 ] (viewInfo model.name "American Ale" ChangeName)
+        , el [ moveUp 0 ] (viewInfo model.batchSize "5 gallons" ChangeBatchSize)
         ]
 
 
@@ -120,20 +121,12 @@ formatDate =
 viewDate : Parseable Date -> Element Msg
 viewDate date =
     I.text
-        ([ alignTop
-         , Border.width 0
-         , padding 6
-         , moveLeft 6
-         , Events.onFocus UnparseDate
-         , Events.onLoseFocus ParseDate
-         ]
-            ++ checkDate date
-        )
+        (Events.onFocus UnparseDate :: Events.onLoseFocus ParseDate :: inputAttrs ++ checkDate date)
         { onChange = ChangeDate
         , text = formatDate date
         , placeholder =
             Just
-                (I.placeholder [ moveLeft 6 ]
+                (I.placeholder [ moveLeft 7 ]
                     (text "January 1st, 1970 ")
                 )
         , label = I.labelHidden ""
@@ -152,13 +145,18 @@ checkDate date =
 viewInfo : String -> String -> (String -> Msg) -> Element Msg
 viewInfo info placeholder onChange =
     I.text
-        [ alignTop
-        , Border.width 0
-        , padding 6
-        , moveLeft 6
-        ]
+        inputAttrs
         { onChange = onChange
         , text = info
-        , placeholder = Just (I.placeholder [ moveLeft 6 ] (text placeholder))
+        , placeholder = Just (I.placeholder [ moveLeft 7 ] (text placeholder))
         , label = I.labelHidden ""
         }
+
+
+inputAttrs : List (Attribute Msg)
+inputAttrs =
+    [ Border.width 0
+    , padding 7
+    , moveLeft 7
+    , Background.color (rgba 1 1 1 0)
+    ]

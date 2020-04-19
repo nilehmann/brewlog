@@ -137,10 +137,16 @@ view model =
             ]
             []
         , layout
-            [ Font.family [ Font.typeface "Indie Flower" ], Font.size 20 ]
+            [ Font.family [ Font.typeface "Indie Flower" ], Font.size 24 ]
             (column [ width fill, spacing 20 ]
                 [ headerView
-                , el [ width (px 920), centerX ] (bodyView model)
+                , el
+                    [ width (px 1024)
+                    , centerX
+                    , Background.tiledY "/assets/background.jpg"
+                    , paddingEach { top = 6, left = 100, right = 20, bottom = 0 }
+                    ]
+                    (bodyView model)
                 ]
             )
         ]

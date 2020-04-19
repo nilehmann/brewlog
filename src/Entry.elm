@@ -1,6 +1,7 @@
 module Entry exposing (Entry, EntryField, viewEntries)
 
 import Element exposing (..)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
@@ -25,10 +26,13 @@ type alias EntryField msg =
     }
 
 
-viewEntries : List (Entry msg) -> Element msg
-viewEntries entries =
-    column [ spacing 6, width fill ]
-        (List.indexedMap viewEntry entries)
+viewEntries : msg -> List (Entry msg) -> Element msg
+viewEntries onAdd entries =
+    column [ spacing 8, width fill ]
+        [ column [ spacing 2, width fill ]
+            (List.indexedMap viewEntry entries)
+        , viewAddButton onAdd
+        ]
 
 
 viewEntry :
@@ -38,7 +42,7 @@ viewEntry :
 viewEntry idx entry =
     row [ spacing 10 ]
         [ I.button
-            [ alignTop, moveDown 5 ]
+            [ alignTop, moveDown 7 ]
             { onPress = Just (entry.onRemove idx)
             , label =
                 image [ width (px 15), height (px 15) ]
@@ -81,4 +85,22 @@ inputAttributes idx entryField =
             else
                 []
     in
-    [ alignTop, Border.width 0, padding 4, moveLeft 4, spacing 9 ] ++ Maybe.toList onFocus ++ Maybe.toList onLoseFocus ++ error
+    [ alignTop
+    , Border.width 0
+    , padding 6
+    , moveLeft 6
+    , spacing 14
+    , Background.color (rgba 1 1 1 0)
+    ]
+        ++ Maybe.toList onFocus
+        ++ Maybe.toList onLoseFocus
+        ++ error
+
+
+viewAddButton : msg -> Element msg
+viewAddButton onAdd =
+    I.button
+        [ centerX ]
+        { onPress = Just onAdd
+        , label = text "Add"
+        }

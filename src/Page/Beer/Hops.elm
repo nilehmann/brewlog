@@ -107,10 +107,10 @@ view items =
             Array.mapToList itemToEntry items
 
         itemViews =
-            Entry.viewEntries entries
+            Entry.viewEntries Add entries
     in
-    column [ spacing 6, width fill ]
-        [ viewHeader, itemViews, viewAddItem ]
+    column [ spacing -4, width fill ]
+        [ viewHeader, itemViews ]
 
 
 itemToEntry : Item -> Entry Msg
@@ -138,11 +138,3 @@ itemToEntry item =
 viewHeader : Element Msg
 viewHeader =
     el [ Font.size 30, height (px 40) ] (text "Hop Schedule")
-
-
-viewAddItem : Element Msg
-viewAddItem =
-    I.button [ centerX, height (px 40) ]
-        { onPress = Just Add
-        , label = text "Add"
-        }

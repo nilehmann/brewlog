@@ -132,24 +132,15 @@ view ingredients =
             Array.mapToList ingredientToEntry ingredients
 
         ingredientViews =
-            Entry.viewEntries entries
+            Entry.viewEntries Add entries
     in
-    column [ spacing 6, width fill ]
-        [ viewHeader, ingredientViews, viewAddIngredient ]
+    column [ spacing -4, width fill ]
+        [ viewHeader, ingredientViews ]
 
 
 viewHeader : Element Msg
 viewHeader =
     el [ Font.size 30, height (px 40) ] (text "Ingredients")
-
-
-viewAddIngredient : Element Msg
-viewAddIngredient =
-    I.button
-        [ centerX, height (px 40) ]
-        { onPress = Just Add
-        , label = text "Add"
-        }
 
 
 ingredientToEntry : Ingredient -> Entry Msg

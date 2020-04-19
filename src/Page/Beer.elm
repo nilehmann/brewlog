@@ -256,10 +256,12 @@ view model =
 
 viewFetched : Beer -> Element BeerMsg
 viewFetched beer =
-    column [ spacing 60, width fill ]
+    column [ spacing 39, width fill ]
         [ map GotBasicInfoMsg (BasicInfo.view beer.basicInfo)
-        , receipe beer
-        , map GotLogsMsg (Logs.view beer.logs (BasicInfo.getDate beer.basicInfo))
+        , column [ spacing 45, width fill ]
+            [ receipe beer
+            , map GotLogsMsg (Logs.view beer.logs (BasicInfo.getDate beer.basicInfo))
+            ]
         ]
 
 

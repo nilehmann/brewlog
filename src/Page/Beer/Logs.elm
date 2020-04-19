@@ -149,23 +149,15 @@ view logEntries batchDate =
             Array.mapToList (logEntryToEntry batchDate) logEntries
 
         entryViews =
-            Entry.viewEntries entries
+            Entry.viewEntries (Add Nothing) entries
     in
-    column [ spacing 6, width fill ]
-        [ viewHeader, entryViews, viewAddEntry ]
+    column [ spacing -1, width fill ]
+        [ viewHeader, entryViews ]
 
 
 viewHeader : Element Msg
 viewHeader =
     el [ Font.size 30, height (px 40) ] (text "Logs")
-
-
-viewAddEntry : Element Msg
-viewAddEntry =
-    I.button [ centerX, height (px 40) ]
-        { onPress = Just (Add Nothing)
-        , label = text "Add"
-        }
 
 
 logEntryToEntry : Maybe Date -> LogEntry -> Entry Msg
