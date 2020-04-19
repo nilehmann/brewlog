@@ -51,7 +51,7 @@ viewEntry idx entry =
                     }
             }
         , I.text
-            (width (px 120) :: inputAttributes idx entry.left)
+            (width (px 0 |> minimum 140) :: inputAttributes idx entry.left)
             { onChange = entry.left.onChange idx
             , text = entry.left.text
             , placeholder = Just (I.placeholder [] (text entry.left.placeholder))

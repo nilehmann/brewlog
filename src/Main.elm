@@ -137,14 +137,19 @@ view model =
             ]
             []
         , layout
-            [ Font.family [ Font.typeface "Indie Flower" ], Font.size 24 ]
-            (column [ width fill, spacing 20 ]
-                [ headerView
+            [ Font.family [ Font.typeface "Indie Flower" ], Font.size 24, width fill ]
+            (column [ width fill, spacing 0, width (px 1024), centerX ]
+                [ el
+                    [ width fill
+                    , height (px 126)
+                    , Background.uncropped "/assets/background-top.jpg"
+                    ]
+                    none
                 , el
-                    [ width (px 1024)
+                    [ width fill
                     , centerX
                     , Background.tiledY "/assets/background.jpg"
-                    , paddingEach { top = 6, left = 100, right = 20, bottom = 0 }
+                    , paddingEach { top = 6, left = 100, right = 20, bottom = 100 }
                     ]
                     (bodyView model)
                 ]
@@ -156,11 +161,6 @@ view model =
 fontHref : String
 fontHref =
     "https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap"
-
-
-headerView : Element Msg
-headerView =
-    box (rgb 0 0 0) fill (px 100)
 
 
 bodyView : Model -> Element Msg
@@ -177,11 +177,6 @@ bodyView model =
 
         Initializing ->
             none
-
-
-box : Color -> Length -> Length -> Element Msg
-box color w h =
-    el [ Background.color color, width w, height h ] (html (Html.div [] []))
 
 
 
