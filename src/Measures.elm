@@ -1,6 +1,7 @@
-module Measures exposing (Measure, format, parse, unparse)
+module Measures exposing (Measure, format, fromString, parse, toString, unparse)
 
 import Dict
+import Parseable exposing (Parseable)
 import Parser exposing (..)
 import Parser.Dict exposing (fromDict)
 
@@ -21,8 +22,28 @@ type Unit
     | Liters
 
 
-parse : String -> Maybe Measure
-parse s =
+fromString : String -> Parseable Measure
+fromString =
+    Parseable.fromString parseMeasure
+
+
+toString : Parseable Measure -> Maybe String
+toString =
+    Parseable.toString unparseMeasure
+
+
+parse : Parseable Measure -> Parseable Measure
+parse =
+    Parseable.parse parseMeasure
+
+
+unparse : Parseable Measure -> Parseable Measure
+unparse =
+    Parseable.unparse unparseMeasure
+
+
+parseMeasure : String -> Maybe Measure
+parseMeasure s =
     Parser.run (succeed identity |. spaces |= measureParser |. spaces |. end) s
         |> Result.toMaybe
 
@@ -56,8 +77,8 @@ unitParser =
         |> fromDict
 
 
-unparse : Measure -> String
-unparse measure =
+unparseMeasure : Measure -> String
+unparseMeasure measure =
     let
         unit =
             unitToString measure.unit
@@ -71,7 +92,7 @@ unparse measure =
 
 format : Measure -> String
 format =
-    unparse
+    unparseMeasure
 
 
 unitToString : Unit -> String

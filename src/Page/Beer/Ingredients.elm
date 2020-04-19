@@ -18,8 +18,9 @@ import Element.Font as Font
 import Element.Input as I
 import Json.Decode as D
 import Maybe.Extra as Maybe
-import Measures
+import Measures exposing (Measure)
 import Objecthash.Value as V
+import Parseable exposing (Parseable)
 
 
 
@@ -41,15 +42,9 @@ type alias Model =
 
 
 type alias Ingredient =
-    { amount : Amount
+    { amount : Parseable Measure
     , descr : String
     }
-
-
-type Amount
-    = Parsed Measures.Measure
-    | Unparsed String
-    | ParseError String
 
 
 decoder : D.Decoder Model
@@ -57,7 +52,7 @@ decoder =
     D.array
         (D.map2
             Ingredient
-            (D.map (parse << Unparsed) (D.field "amount" D.string))
+            (D.map Measures.fromString (D.field "amount" D.string))
             (D.field "descr" D.string)
         )
 
@@ -66,47 +61,20 @@ toObjecthashValue : Model -> Maybe V.Value
 toObjecthashValue model =
     let
         f ingredient =
-            case parse ingredient.amount of
-                Parsed measure ->
-                    [ ( "descr", V.string ingredient.descr )
-                    , ( "amount", V.string (Measures.unparse measure) )
-                    ]
-                        |> Dict.fromList
-                        |> V.dict
-                        |> Just
-
-                _ ->
-                    Nothing
+            Measures.parse ingredient.amount
+                |> Measures.toString
+                |> Maybe.map
+                    (\measure ->
+                        [ ( "descr", V.string ingredient.descr )
+                        , ( "amount", V.string measure )
+                        ]
+                            |> Dict.fromList
+                            |> V.dict
+                    )
     in
     Array.mapToList f model
         |> Maybe.combine
         |> Maybe.map V.list
-
-
-
--- parse : String -> Parseable Measure
-
-
-parse : Amount -> Amount
-parse amount =
-    case amount of
-        Unparsed s ->
-            Measures.parse s
-                |> Maybe.map Parsed
-                |> Maybe.withDefault (ParseError s)
-
-        _ ->
-            amount
-
-
-unparse : Amount -> Amount
-unparse amount =
-    case amount of
-        Parsed measure ->
-            Unparsed (Measures.unparse measure)
-
-        _ ->
-            amount
 
 
 
@@ -132,21 +100,21 @@ update msg ingredients =
 
         ChangeAmount idx s ->
             Array.update idx
-                (\ingr -> { ingr | amount = Unparsed s })
+                (\ingr -> { ingr | amount = Parseable.unparsed s })
                 ingredients
 
         Parse idx ->
             Array.update idx
-                (\ingr -> { ingr | amount = parse ingr.amount })
+                (\ingr -> { ingr | amount = Measures.parse ingr.amount })
                 ingredients
 
         Unparse idx ->
             Array.update idx
-                (\ingr -> { ingr | amount = unparse ingr.amount })
+                (\ingr -> { ingr | amount = Measures.unparse ingr.amount })
                 ingredients
 
         Add ->
-            Array.push (Ingredient (ParseError "") "") ingredients
+            Array.push (Ingredient (Measures.fromString "") "") ingredients
 
         Remove idx ->
             Array.append
@@ -206,7 +174,7 @@ viewIngredient ( idx, ingredient ) =
             )
             { onChange = ChangeAmount idx
             , text = formatAmount ingredient.amount
-            , placeholder = Just (I.placeholder [] (text "1 1/2 ounces"))
+            , placeholder = Just (I.placeholder [] (text "1.5 ounces"))
             , label = I.labelHidden "Ingredient amount"
             }
         , I.multiline
@@ -226,24 +194,15 @@ viewIngredient ( idx, ingredient ) =
         ]
 
 
-checkAmount : Amount -> List (Attribute Msg)
+checkAmount : Parseable Measure -> List (Attribute Msg)
 checkAmount amount =
-    case amount of
-        ParseError _ ->
-            [ Font.color (rgb 1 0 0), Font.underline ]
+    if Parseable.isError amount then
+        [ Font.color (rgb 1 0 0), Font.underline ]
 
-        _ ->
-            []
+    else
+        []
 
 
-formatAmount : Amount -> String
+formatAmount : Parseable Measure -> String
 formatAmount amount =
-    case amount of
-        Parsed measure ->
-            Measures.format measure
-
-        Unparsed s ->
-            s
-
-        ParseError s ->
-            s
+    Parseable.format Measures.format amount
