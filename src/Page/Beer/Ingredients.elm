@@ -58,7 +58,7 @@ decoder =
         (D.map2
             Ingredient
             (D.map (parse << Unparsed) (D.field "amount" D.string))
-            (D.field "amount" D.string)
+            (D.field "descr" D.string)
         )
 
 
