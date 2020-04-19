@@ -15,6 +15,7 @@ import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as I
+import Entry exposing (Entry)
 import Json.Decode as D
 import Objecthash.Value as V
 
@@ -103,11 +104,19 @@ update msg items =
 view : Model -> Element Msg
 view items =
     let
+        entries =
+            Array.mapToList (\item -> Entry item.time item.descr) items
+
         itemViews =
-            Array.indexedMapToList viewItem items
+            Entry.viewEntries
+                { onRemove = Remove
+                , onChangeLeft = ChangeTime
+                , onChangeRight = ChangeTime
+                }
+                entries
     in
     column [ spacing 6, width fill ]
-        (viewHeader :: itemViews ++ [ viewAddItem ])
+        [ viewHeader, itemViews, viewAddItem ]
 
 
 viewHeader : Element Msg
@@ -121,32 +130,3 @@ viewAddItem =
         { onPress = Just Add
         , label = text "Add"
         }
-
-
-viewItem : Int -> Item -> Element Msg
-viewItem idx ingredient =
-    row [ spacing 10 ]
-        [ I.button
-            [ alignTop, moveDown 5 ]
-            { onPress = Just (Remove idx)
-            , label =
-                image [ width (px 15), height (px 15) ]
-                    { src = "/assets/delete-32x32.png"
-                    , description = ""
-                    }
-            }
-        , I.text
-            [ width (px 120), alignTop, Border.width 0, padding 4, moveLeft 4 ]
-            { onChange = ChangeTime idx
-            , text = ingredient.time
-            , placeholder = Nothing
-            , label = I.labelHidden "Item time"
-            }
-        , I.multiline [ alignTop, Border.width 0, padding 4, moveLeft 4 ]
-            { onChange = ChangeDescr idx
-            , text = ingredient.descr
-            , placeholder = Nothing
-            , label = I.labelHidden "Item descr"
-            , spellcheck = True
-            }
-        ]
