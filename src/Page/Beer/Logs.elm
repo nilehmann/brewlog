@@ -18,6 +18,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import Entry exposing (Entry)
 import Json.Decode as D
 import Maybe.Extra as Maybe
 import Objecthash.Value as V
@@ -41,10 +42,10 @@ init =
 
 
 type alias Model =
-    Array Entry
+    Array LogEntry
 
 
-type alias Entry =
+type alias LogEntry =
     { time : Parseable DateTime
     , descr : String
     }
@@ -53,7 +54,7 @@ type alias Entry =
 decoder : D.Decoder Model
 decoder =
     D.array
-        (D.map2 Entry
+        (D.map2 LogEntry
             (D.map DateTime.fromString (D.field "time" D.string))
             (D.field "descr" D.string)
         )
@@ -114,7 +115,7 @@ update zone msg entries =
 
         Add (Just time) ->
             ( Array.push
-                (Entry (Parseable.fromData (DateTime.fromPosix zone time)) "")
+                (LogEntry (Parseable.fromData (DateTime.fromPosix zone time)) "")
                 entries
             , Cmd.none
             )
@@ -142,13 +143,16 @@ update zone msg entries =
 
 
 view : Model -> Maybe Date -> Element Msg
-view entries batchDate =
+view logEntries batchDate =
     let
+        entries =
+            Array.mapToList (logEntryToEntry batchDate) logEntries
+
         entryViews =
-            List.map (viewEntry batchDate) (Array.toIndexedList entries)
+            Entry.viewEntries entries
     in
     column [ spacing 6, width fill ]
-        (viewHeader :: entryViews ++ [ viewAddEntry ])
+        [ viewHeader, entryViews, viewAddEntry ]
 
 
 viewHeader : Element Msg
@@ -164,53 +168,26 @@ viewAddEntry =
         }
 
 
-viewEntry : Maybe Date -> ( Int, Entry ) -> Element Msg
-viewEntry batchDate ( idx, entry ) =
-    row [ spacing 10 ]
-        [ I.button
-            [ alignTop, moveDown 5 ]
-            { onPress = Just (Remove idx)
-            , label =
-                image [ width (px 15), height (px 15) ]
-                    { src = "/assets/delete-32x32.png"
-                    , description = ""
-                    }
-            }
-        , I.text
-            (inputAttrs
-                ++ [ width (px 0 |> minimum 120)
-                   , Events.onFocus (UnparseTime idx)
-                   , Events.onLoseFocus (ParseTime idx)
-                   ]
-                ++ checkTime entry.time
-            )
-            { onChange = ChangeTime idx
-            , text = formatTime batchDate entry.time
-            , placeholder = Nothing
-            , label = I.labelHidden "Entry time"
-            }
-        , I.multiline inputAttrs
-            { onChange = ChangeDescr idx
-            , text = entry.descr
-            , placeholder = Nothing
-            , label = I.labelHidden "Entry descr"
-            , spellcheck = True
-            }
-        ]
-
-
-checkTime : Parseable DateTime -> List (Attribute Msg)
-checkTime entryTime =
-    if Parseable.isError entryTime then
-        [ Font.color (rgb 1 0 0), Font.underline ]
-
-    else
-        []
-
-
-inputAttrs : List (Attribute Msg)
-inputAttrs =
-    [ alignTop, Border.width 0, padding 4, moveLeft 4 ]
+logEntryToEntry : Maybe Date -> LogEntry -> Entry Msg
+logEntryToEntry batchDate logEntry =
+    { onRemove = Remove
+    , left =
+        { text = formatTime batchDate logEntry.time
+        , placeholder = "time"
+        , error = Parseable.isError logEntry.time
+        , onChange = ChangeTime
+        , onFocus = Just UnparseTime
+        , onLoseFocus = Just ParseTime
+        }
+    , right =
+        { text = logEntry.descr
+        , placeholder = "description"
+        , error = False
+        , onChange = ChangeDescr
+        , onFocus = Nothing
+        , onLoseFocus = Nothing
+        }
+    }
 
 
 formatTime : Maybe Date -> Parseable DateTime -> String

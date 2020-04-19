@@ -12,10 +12,9 @@ import Array exposing (Array)
 import Array.Extra as Array
 import Dict
 import Element exposing (..)
-import Element.Border as Border
-import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import Entry exposing (Entry)
 import Json.Decode as D
 import Maybe.Extra as Maybe
 import Measures exposing (Measure)
@@ -129,11 +128,14 @@ update msg ingredients =
 view : Model -> Element Msg
 view ingredients =
     let
+        entries =
+            Array.mapToList ingredientToEntry ingredients
+
         ingredientViews =
-            List.map viewIngredient (Array.toIndexedList ingredients)
+            Entry.viewEntries entries
     in
     column [ spacing 6, width fill ]
-        (viewHeader :: ingredientViews ++ [ viewAddIngredient ])
+        [ viewHeader, ingredientViews, viewAddIngredient ]
 
 
 viewHeader : Element Msg
@@ -150,57 +152,26 @@ viewAddIngredient =
         }
 
 
-viewIngredient : ( Int, Ingredient ) -> Element Msg
-viewIngredient ( idx, ingredient ) =
-    row [ spacing 10 ]
-        [ I.button
-            [ alignTop, moveDown 5 ]
-            { onPress = Just (Remove idx)
-            , label =
-                image [ width (px 15), height (px 15) ]
-                    { src = "/assets/delete-32x32.png"
-                    , description = ""
-                    }
-            }
-        , I.text
-            ([ width (px 120)
-             , alignTop
-             , Border.width 0
-             , padding 4
-             , Events.onFocus (Unparse idx)
-             , Events.onLoseFocus (Parse idx)
-             ]
-                ++ checkAmount ingredient.amount
-            )
-            { onChange = ChangeAmount idx
-            , text = formatAmount ingredient.amount
-            , placeholder = Just (I.placeholder [] (text "1.5 ounces"))
-            , label = I.labelHidden "Ingredient amount"
-            }
-        , I.multiline
-            [ alignTop
-            , Border.width 0
-            , width fill
-            , padding 4
-            , moveLeft 4
-            , spacing 9
-            ]
-            { onChange = ChangeDescr idx
-            , text = ingredient.descr
-            , placeholder = Just (I.placeholder [] (text "Fuggles hops"))
-            , label = I.labelHidden "Ingredient descr"
-            , spellcheck = True
-            }
-        ]
-
-
-checkAmount : Parseable Measure -> List (Attribute Msg)
-checkAmount amount =
-    if Parseable.isError amount then
-        [ Font.color (rgb 1 0 0), Font.underline ]
-
-    else
-        []
+ingredientToEntry : Ingredient -> Entry Msg
+ingredientToEntry ingredient =
+    { onRemove = Remove
+    , left =
+        { text = formatAmount ingredient.amount
+        , error = Parseable.isError ingredient.amount
+        , onChange = ChangeAmount
+        , placeholder = "1.5 ounces"
+        , onFocus = Just Unparse
+        , onLoseFocus = Just Parse
+        }
+    , right =
+        { text = ingredient.descr
+        , error = False
+        , onChange = ChangeDescr
+        , placeholder = "Fuggles hops"
+        , onFocus = Nothing
+        , onLoseFocus = Nothing
+        }
+    }
 
 
 formatAmount : Parseable Measure -> String

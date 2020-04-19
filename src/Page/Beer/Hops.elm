@@ -118,11 +118,19 @@ itemToEntry item =
     { onRemove = Remove
     , left =
         { text = item.time
+        , placeholder = "60 min"
+        , error = False
         , onChange = ChangeTime
+        , onFocus = Nothing
+        , onLoseFocus = Nothing
         }
     , right =
         { text = item.descr
+        , placeholder = "1 ounce hallertau"
+        , error = False
         , onChange = ChangeDescr
+        , onFocus = Nothing
+        , onLoseFocus = Nothing
         }
     }
 
