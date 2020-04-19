@@ -12,7 +12,6 @@ import Array exposing (Array)
 import Array.Extra as Array
 import Dict
 import Element exposing (..)
-import Element.Border as Border
 import Element.Font as Font
 import Element.Input as I
 import Entry exposing (Entry)
@@ -105,18 +104,27 @@ view : Model -> Element Msg
 view items =
     let
         entries =
-            Array.mapToList (\item -> Entry item.time item.descr) items
+            Array.mapToList itemToEntry items
 
         itemViews =
-            Entry.viewEntries
-                { onRemove = Remove
-                , onChangeLeft = ChangeTime
-                , onChangeRight = ChangeTime
-                }
-                entries
+            Entry.viewEntries entries
     in
     column [ spacing 6, width fill ]
         [ viewHeader, itemViews, viewAddItem ]
+
+
+itemToEntry : Item -> Entry Msg
+itemToEntry item =
+    { onRemove = Remove
+    , left =
+        { text = item.time
+        , onChange = ChangeTime
+        }
+    , right =
+        { text = item.descr
+        , onChange = ChangeDescr
+        }
+    }
 
 
 viewHeader : Element Msg
