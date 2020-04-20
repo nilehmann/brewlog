@@ -92,11 +92,11 @@ randomAlphaNum =
 
 view : Model -> Element Msg
 view model =
-    column []
+    column [ width fill, spacing 56 ]
         [ I.button
-            []
+            [ Font.size 30, Font.bold ]
             { onPress = Just ClickedNewBeer
-            , label = text "New"
+            , label = text "Create new Batch"
             }
         , viewBeers model
         ]
@@ -104,7 +104,7 @@ view model =
 
 viewBeers : Model -> Element Msg
 viewBeers model =
-    table []
+    table [ width fill, spacing 14 ]
         { data = model.beers
         , columns =
             [ { header = tableHeader "Name"

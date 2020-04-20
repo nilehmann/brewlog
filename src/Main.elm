@@ -137,19 +137,26 @@ view model =
             ]
             []
         , layout
-            [ Font.family [ Font.typeface "Indie Flower" ], Font.size 24, width fill ]
-            (column [ width fill, spacing 0, width (px 1024), centerX ]
+            [ Font.family
+                [ Font.typeface "Indie Flower"
+                ]
+            , Font.size 24
+            , Background.tiled "/assets/background.jpg"
+            , width fill
+            ]
+            (column [ spacing 0, width (px 1024), height fill, centerX ]
                 [ el
                     [ width fill
                     , height (px 126)
-                    , Background.uncropped "/assets/background-top.jpg"
+                    , Background.uncropped "/assets/notebook-top.jpg"
                     ]
                     none
                 , el
                     [ width fill
+                    , height fill
                     , centerX
-                    , Background.tiledY "/assets/background.jpg"
-                    , paddingEach { top = 6, left = 100, right = 20, bottom = 100 }
+                    , Background.tiledY "/assets/notebook-middle.jpg"
+                    , paddingEach { top = 6, left = 100, right = 40, bottom = 100 }
                     ]
                     (bodyView model)
                 ]
