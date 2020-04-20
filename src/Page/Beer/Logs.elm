@@ -144,20 +144,10 @@ update zone msg entries =
 
 view : Model -> Maybe Date -> Element Msg
 view logEntries batchDate =
-    let
-        entries =
-            Array.mapToList (logEntryToEntry batchDate) logEntries
-
-        entryViews =
-            Entry.viewEntries (Add Nothing) entries
-    in
-    column [ spacing -1, width fill ]
-        [ viewHeader, entryViews ]
-
-
-viewHeader : Element Msg
-viewHeader =
-    el [ Font.size 30, height (px 40) ] (text "Logs")
+    Entry.viewEntries
+        "Logs"
+        (Add Nothing)
+        (Array.mapToList (logEntryToEntry batchDate) logEntries)
 
 
 logEntryToEntry : Maybe Date -> LogEntry -> Entry Msg

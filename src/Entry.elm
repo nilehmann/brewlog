@@ -26,12 +26,15 @@ type alias EntryField msg =
     }
 
 
-viewEntries : msg -> List (Entry msg) -> Element msg
-viewEntries onAdd entries =
-    column [ spacing 8, width fill ]
-        [ column [ spacing 2, width fill ]
-            (List.indexedMap viewEntry entries)
-        , viewAddButton onAdd
+viewEntries : String -> msg -> List (Entry msg) -> Element msg
+viewEntries title onAdd entries =
+    column [ spacing -4, width fill ]
+        [ el [ Font.size 30, height (px 40) ] (text title)
+        , column [ spacing 8, width fill ]
+            [ column [ spacing 2, width fill ]
+                (List.indexedMap viewEntry entries)
+            , viewAddButton onAdd
+            ]
         ]
 
 

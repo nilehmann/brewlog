@@ -102,15 +102,10 @@ update msg items =
 
 view : Model -> Element Msg
 view items =
-    let
-        entries =
-            Array.mapToList itemToEntry items
-
-        itemViews =
-            Entry.viewEntries Add entries
-    in
-    column [ spacing -4, width fill ]
-        [ viewHeader, itemViews ]
+    Entry.viewEntries
+        "Hop Schedule"
+        Add
+        (Array.mapToList itemToEntry items)
 
 
 itemToEntry : Item -> Entry Msg
@@ -133,8 +128,3 @@ itemToEntry item =
         , onLoseFocus = Nothing
         }
     }
-
-
-viewHeader : Element Msg
-viewHeader =
-    el [ Font.size 30, height (px 40) ] (text "Hop Schedule")

@@ -127,20 +127,10 @@ update msg ingredients =
 
 view : Model -> Element Msg
 view ingredients =
-    let
-        entries =
-            Array.mapToList ingredientToEntry ingredients
-
-        ingredientViews =
-            Entry.viewEntries Add entries
-    in
-    column [ spacing -4, width fill ]
-        [ viewHeader, ingredientViews ]
-
-
-viewHeader : Element Msg
-viewHeader =
-    el [ Font.size 30, height (px 40) ] (text "Ingredients")
+    Entry.viewEntries
+        "Ingredients"
+        Add
+        (Array.mapToList ingredientToEntry ingredients)
 
 
 ingredientToEntry : Ingredient -> Entry Msg
