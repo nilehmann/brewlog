@@ -12,8 +12,6 @@ import Array exposing (Array)
 import Array.Extra as Array
 import Dict
 import Element exposing (..)
-import Element.Font as Font
-import Element.Input as I
 import Entry exposing (Entry)
 import Json.Decode as D
 import Objecthash.Value as V

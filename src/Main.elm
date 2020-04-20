@@ -40,7 +40,7 @@ type Model
 type Page
     = Home Home.Model
     | Beer Beer.Model
-    | Blank
+    | NotFound
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -49,7 +49,6 @@ init _ url key =
 
 
 
--- changeRouteTo (Route.fromUrl url) { key = key, page = Blank }
 -- UPDATE
 
 
@@ -107,8 +106,8 @@ changeRouteTo route session =
                 |> updateWith Beer GotBeerMsg session
 
         Nothing ->
-            Home.init session.key
-                |> updateWith Home GotHomeMsg session
+            -- ( Initialized session NotFound, Cmd.none )
+            changeRouteTo (Just Route.Home) session
 
 
 updateWith :
@@ -179,8 +178,18 @@ bodyView model =
         Initialized _ (Beer subModel) ->
             Element.map GotBeerMsg (Beer.view subModel)
 
-        Initialized _ Blank ->
-            none
+        Initialized _ NotFound ->
+            el
+                [ Font.family
+                    [ Font.typeface "Arial"
+                    ]
+                , centerY
+                , centerX
+                , moveDown 8
+                , Font.size 40
+                , Font.bold
+                ]
+                (text "404")
 
         Initializing ->
             none

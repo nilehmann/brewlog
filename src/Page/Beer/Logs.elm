@@ -14,10 +14,6 @@ import Date exposing (Date)
 import DateTime exposing (DateTime)
 import Dict
 import Element exposing (..)
-import Element.Border as Border
-import Element.Events as Events
-import Element.Font as Font
-import Element.Input as I
 import Entry exposing (Entry)
 import Json.Decode as D
 import Maybe.Extra as Maybe
