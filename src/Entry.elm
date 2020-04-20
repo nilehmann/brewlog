@@ -83,7 +83,7 @@ inputAttributes idx entryField =
 
         error =
             if entryField.error then
-                [ Font.color (rgb 1 0 0), Font.underline ]
+                [ Font.color (rgb 1 0 0) ]
 
             else
                 []

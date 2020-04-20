@@ -135,8 +135,8 @@ viewDate date =
 
 checkDate : Parseable Date -> List (Attribute Msg)
 checkDate date =
-    if Parseable.isError date then
-        [ Font.color (rgb 1 0 0), Font.underline ]
+    if Date.isError date then
+        [ Font.color (rgb 1 0 0) ]
 
     else
         []

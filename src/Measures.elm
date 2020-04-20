@@ -1,4 +1,4 @@
-module Measures exposing (Measure, format, fromString, parse, toString, unparse)
+module Measures exposing (Measure, format, fromString, isError, parse, toString, unparse)
 
 import Dict
 import Parseable exposing (Parseable)
@@ -20,6 +20,11 @@ type Unit
     | Ounces
     | Gallons
     | Liters
+
+
+isError : Parseable Measure -> Bool
+isError =
+    Parseable.isError parseMeasure
 
 
 fromString : String -> Parseable Measure

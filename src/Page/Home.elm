@@ -90,16 +90,19 @@ randomAlphaNum =
 -- VIEW
 
 
-view : Model -> Element Msg
+view : Model -> { body : Element Msg, status : Element Msg }
 view model =
-    column [ width fill, spacing 56 ]
-        [ I.button
-            [ Font.size 30, Font.bold ]
-            { onPress = Just ClickedNewBeer
-            , label = text "Create new Batch"
-            }
-        , viewBeers model
-        ]
+    { body =
+        column [ width fill, spacing 56 ]
+            [ I.button
+                [ Font.size 30, Font.bold ]
+                { onPress = Just ClickedNewBeer
+                , label = text "Create new Batch"
+                }
+            , viewBeers model
+            ]
+    , status = none
+    }
 
 
 viewBeers : Model -> Element Msg

@@ -4,6 +4,7 @@ import Api
 import Date
 import Dict
 import Element exposing (..)
+import Element.Font as Font
 import Http
 import Json.Decode as D
 import Objecthash exposing (objecthash)
@@ -155,7 +156,7 @@ update msg model =
                         metadata =
                             { id = docResult.id
                             , rev = Just docResult.rev
-                            , savedHash = ""
+                            , savedHash = beerHash docResult.doc
                             }
                     in
                     ( { model | state = Fetched metadata docResult.doc }
@@ -168,7 +169,12 @@ update msg model =
         ( SaveBeerResult result, Fetched metadata beer ) ->
             case Debug.log "save beer" result of
                 Ok r ->
-                    ( { model | state = Fetched { metadata | rev = Just r.rev } beer }
+                    ( { model
+                        | state =
+                            Fetched
+                                { metadata | rev = Just r.rev, savedHash = beerHash beer }
+                                beer
+                      }
                     , Cmd.none
                     )
 
@@ -176,12 +182,8 @@ update msg model =
                     ( model, Cmd.none )
 
         ( Tick _, Fetched metadata beer ) ->
-            let
-                ( _, cmd ) =
-                    saveBeer metadata beer
-            in
-            ( { model | state = Fetched metadata beer }
-            , cmd
+            ( model
+            , saveBeer metadata beer
             )
 
         -- Ignore messages in the wrong state
@@ -189,7 +191,7 @@ update msg model =
             ( model, Cmd.none )
 
 
-saveBeer : MetaData -> Beer -> ( MetaData, Cmd Msg )
+saveBeer : MetaData -> Beer -> Cmd Msg
 saveBeer metadata beer =
     case toObjecthashValue beer of
         Just value ->
@@ -198,18 +200,16 @@ saveBeer metadata beer =
                     objecthash value
             in
             if hash /= metadata.savedHash then
-                ( { metadata | savedHash = hash }
-                , Api.documentPut SaveBeerResult
+                Api.documentPut SaveBeerResult
                     metadata.id
                     metadata.rev
                     (V.toJsonValue value)
-                )
 
             else
-                ( metadata, Cmd.none )
+                Cmd.none
 
         Nothing ->
-            ( metadata, Cmd.none )
+            Cmd.none
 
 
 updateBeer : Time.Zone -> BeerMsg -> Beer -> ( Beer, Cmd Msg )
@@ -244,14 +244,39 @@ updateBeer zone msg beer =
 -- VIEW
 
 
-view : Model -> Element Msg
+view : Model -> { body : Element Msg, status : Element Msg }
 view model =
     case model.state of
         Initializing ->
-            none
+            { body = none, status = status model }
 
         Fetched _ beer ->
-            map GotBeerMsg (viewFetched beer)
+            { body = map GotBeerMsg (viewFetched beer)
+            , status = status model
+            }
+
+
+status : Model -> Element Msg
+status model =
+    let
+        ( message, color ) =
+            case model.state of
+                Fetched metadata beer ->
+                    case toObjecthashValue beer of
+                        Just value ->
+                            if Objecthash.objecthash value /= metadata.savedHash then
+                                ( "Saving...", rgba255 119 119 119 1 )
+
+                            else
+                                ( "All changes saved", rgba255 119 119 119 1 )
+
+                        Nothing ->
+                            ( "The form contains errors", rgba 1 0 0 1 )
+
+                Initializing ->
+                    ( "Loading...", rgba255 119 119 119 1 )
+    in
+    el [ Font.size 20, Font.underline, Font.color color ] (text message)
 
 
 viewFetched : Beer -> Element BeerMsg

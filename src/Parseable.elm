@@ -72,9 +72,9 @@ format formatter p =
             s
 
 
-isError : Parseable a -> Bool
-isError p =
-    case p of
+isError : (String -> Maybe a) -> Parseable a -> Bool
+isError parser p =
+    case parse parser p of
         ParseError _ ->
             True
 

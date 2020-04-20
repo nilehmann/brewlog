@@ -5,6 +5,7 @@ module Date exposing
     , format
     , fromPosix
     , fromString
+    , isError
     , parse
     , parser
     , toString
@@ -40,6 +41,11 @@ type alias Date =
     , month : Time.Month
     , year : Int
     }
+
+
+isError : Parseable Date -> Bool
+isError =
+    Parseable.isError parseDate
 
 
 fromPosix : Time.Zone -> Time.Posix -> Date

@@ -4,6 +4,7 @@ module DateTime exposing
     , format
     , fromPosix
     , fromString
+    , isError
     , parse
     , toString
     , unparse
@@ -32,6 +33,11 @@ type alias DateTime =
     { date : Date.Date
     , time : Time
     }
+
+
+isError : Parseable DateTime -> Bool
+isError =
+    Parseable.isError parseDateTime
 
 
 fromString : String -> Parseable DateTime

@@ -128,6 +128,10 @@ updateWith toPage toMsg session ( subModel, subCmd ) =
 
 view : Model -> Browser.Document Msg
 view model =
+    let
+        { body, status } =
+            viewPage model
+    in
     { title = "BrewLog"
     , body =
         [ Html.node "link"
@@ -139,6 +143,7 @@ view model =
             [ Font.family
                 [ Font.typeface "Indie Flower"
                 ]
+            , Font.color (rgba255 34 34 34 1)
             , Font.size 24
             , Background.tiled "/assets/background.jpg"
             , width fill
@@ -148,8 +153,9 @@ view model =
                     [ width fill
                     , height (px 126)
                     , Background.uncropped "/assets/notebook-top.jpg"
+                    , paddingEach { top = 0, left = 100, right = 40, bottom = 0 }
                     ]
-                    none
+                    (el [ alignRight, alignBottom, zIndex 1 ] status)
                 , el
                     [ width fill
                     , height fill
@@ -157,11 +163,16 @@ view model =
                     , Background.tiledY "/assets/notebook-middle.jpg"
                     , paddingEach { top = 6, left = 100, right = 40, bottom = 100 }
                     ]
-                    (bodyView model)
+                    body
                 ]
             )
         ]
     }
+
+
+zIndex : Int -> Attribute msg
+zIndex idx =
+    htmlAttribute (Html.style "z-index" (String.fromInt idx))
 
 
 fontHref : String
@@ -169,30 +180,48 @@ fontHref =
     "https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap"
 
 
-bodyView : Model -> Element Msg
-bodyView model =
+viewPage : Model -> { body : Element Msg, status : Element Msg }
+viewPage model =
     case model of
         Initialized _ (Home subModel) ->
-            Element.map GotHomeMsg (Home.view subModel)
+            viewWith GotHomeMsg (Home.view subModel)
 
         Initialized _ (Beer subModel) ->
-            Element.map GotBeerMsg (Beer.view subModel)
+            viewWith GotBeerMsg (Beer.view subModel)
 
         Initialized _ NotFound ->
-            el
-                [ Font.family
-                    [ Font.typeface "Arial"
-                    ]
-                , centerY
-                , centerX
-                , moveDown 8
-                , Font.size 40
-                , Font.bold
-                ]
-                (text "404")
+            view404
 
         Initializing ->
-            none
+            { body = none, status = none }
+
+
+viewWith :
+    (msg -> Msg)
+    -> { body : Element msg, status : Element msg }
+    -> { body : Element Msg, status : Element Msg }
+viewWith toMsg subView =
+    { body = map toMsg subView.body
+    , status = map toMsg subView.status
+    }
+
+
+view404 : { body : Element Msg, status : Element Msg }
+view404 =
+    { body =
+        el
+            [ Font.family
+                [ Font.typeface "Arial"
+                ]
+            , centerY
+            , centerX
+            , moveDown 8
+            , Font.size 40
+            , Font.bold
+            ]
+            (text "404")
+    , status = none
+    }
 
 
 
