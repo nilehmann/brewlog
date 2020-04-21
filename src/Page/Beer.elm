@@ -29,8 +29,8 @@ type alias Model =
 
 
 type State
-    = Initializing
-    | Fetched MetaData Beer
+    = Loading
+    | Ready MetaData Beer
 
 
 type alias MetaData =
@@ -51,12 +51,12 @@ type alias Beer =
 init : Session -> String -> Bool -> ( Model, Cmd Msg )
 init session id new =
     if new then
-        ( { zone = session.zone, state = Initializing }
+        ( { zone = session.zone, state = Loading }
         , Task.perform (NewBeer id) Time.now
         )
 
     else
-        ( { zone = session.zone, state = Initializing }
+        ( { zone = session.zone, state = Loading }
         , Api.document BeerFetched beerDecoder id
         )
 
@@ -128,7 +128,7 @@ type BeerMsg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model.state ) of
-        ( NewBeer id posix, Initializing ) ->
+        ( NewBeer id posix, Loading ) ->
             let
                 beer =
                     initBeer model.zone posix
@@ -137,17 +137,17 @@ update msg model =
                     beerHash beer
             in
             ( { zone = model.zone
-              , state = Fetched (MetaData id Nothing hash) beer
+              , state = Ready (MetaData id Nothing hash) beer
               }
             , Cmd.none
             )
 
-        ( GotBeerMsg subMsg, Fetched metadata beer ) ->
+        ( GotBeerMsg subMsg, Ready metadata beer ) ->
             let
                 ( newBeer, subCmd ) =
                     updateBeer model.zone subMsg beer
             in
-            ( { model | state = Fetched metadata newBeer }, subCmd )
+            ( { model | state = Ready metadata newBeer }, subCmd )
 
         ( BeerFetched result, _ ) ->
             case Debug.log "beer fetched" result of
@@ -159,19 +159,19 @@ update msg model =
                             , savedHash = beerHash docResult.doc
                             }
                     in
-                    ( { model | state = Fetched metadata docResult.doc }
+                    ( { model | state = Ready metadata docResult.doc }
                     , Cmd.none
                     )
 
                 Err _ ->
                     ( model, Cmd.none )
 
-        ( SaveBeerResult result, Fetched metadata beer ) ->
+        ( SaveBeerResult result, Ready metadata beer ) ->
             case Debug.log "save beer" result of
                 Ok r ->
                     ( { model
                         | state =
-                            Fetched
+                            Ready
                                 { metadata | rev = Just r.rev, savedHash = beerHash beer }
                                 beer
                       }
@@ -181,7 +181,7 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
-        ( Tick _, Fetched metadata beer ) ->
+        ( Tick _, Ready metadata beer ) ->
             ( model
             , saveBeer metadata beer
             )
@@ -247,11 +247,11 @@ updateBeer zone msg beer =
 view : Model -> { body : Element Msg, status : Element Msg }
 view model =
     case model.state of
-        Initializing ->
+        Loading ->
             { body = none, status = status model }
 
-        Fetched _ beer ->
-            { body = map GotBeerMsg (viewFetched beer)
+        Ready _ beer ->
+            { body = map GotBeerMsg (viewReady beer)
             , status = status model
             }
 
@@ -261,7 +261,7 @@ status model =
     let
         ( message, color ) =
             case model.state of
-                Fetched metadata beer ->
+                Ready metadata beer ->
                     case toObjecthashValue beer of
                         Just value ->
                             if Objecthash.objecthash value /= metadata.savedHash then
@@ -271,16 +271,16 @@ status model =
                                 ( "All changes saved", rgba255 119 119 119 1 )
 
                         Nothing ->
-                            ( "The form contains errors", rgba 1 0 0 1 )
+                            ( "The batch contains errors", rgba 1 0 0 1 )
 
-                Initializing ->
+                Loading ->
                     ( "Loading...", rgba255 119 119 119 1 )
     in
     el [ Font.size 20, Font.underline, Font.color color ] (text message)
 
 
-viewFetched : Beer -> Element BeerMsg
-viewFetched beer =
+viewReady : Beer -> Element BeerMsg
+viewReady beer =
     column [ spacing 39, width fill ]
         [ map GotBasicInfoMsg (BasicInfo.view beer.basicInfo)
         , column [ spacing 45, width fill ]

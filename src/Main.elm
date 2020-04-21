@@ -161,7 +161,7 @@ view model =
                     , height fill
                     , centerX
                     , Background.tiledY "/assets/notebook-middle.jpg"
-                    , paddingEach { top = 6, left = 100, right = 40, bottom = 100 }
+                    , paddingEach { top = 44, left = 100, right = 40, bottom = 100 }
                     ]
                     body
                 ]
