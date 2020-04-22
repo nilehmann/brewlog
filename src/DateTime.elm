@@ -3,15 +3,11 @@ module DateTime exposing
     , Time
     , format
     , fromPosix
-    , fromString
-    , isError
     , parse
-    , toString
     , unparse
     )
 
 import Date
-import Parseable exposing (Parseable)
 import Parser
     exposing
         ( (|.)
@@ -35,30 +31,10 @@ type alias DateTime =
     }
 
 
-isError : Parseable DateTime -> Bool
-isError =
-    Parseable.isError parseDateTime
-
-
-fromString : String -> Parseable DateTime
-fromString =
-    Parseable.fromString parseDateTime
-
-
-toString : Parseable DateTime -> Maybe String
-toString =
-    Parseable.toString unparseDateTime
-
-
-parseDateTime : String -> Maybe DateTime
-parseDateTime str =
+parse : String -> Maybe DateTime
+parse str =
     Parser.run (succeed cap |. spaces |= parser |. spaces |. end) str
         |> Result.toMaybe
-
-
-parse : Parseable DateTime -> Parseable DateTime
-parse =
-    Parseable.parse parseDateTime
 
 
 fromPosix : Time.Zone -> Time.Posix -> DateTime
@@ -136,13 +112,8 @@ digit2 desc =
 -- UNPARSE
 
 
-unparse : Parseable DateTime -> Parseable DateTime
-unparse =
-    Parseable.unparse unparseDateTime
-
-
-unparseDateTime : DateTime -> String
-unparseDateTime dateTime =
+unparse : DateTime -> String
+unparse dateTime =
     Date.unparse dateTime.date ++ ", " ++ unparseTime dateTime.time
 
 

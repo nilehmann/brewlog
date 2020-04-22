@@ -2,6 +2,7 @@ module Field exposing
     ( Field
     , asMaybe
     , date
+    , dateTime
     , edit
     , format
     , fromData
@@ -14,6 +15,7 @@ module Field exposing
     )
 
 import Date exposing (Date)
+import DateTime exposing (DateTime)
 import Maybe.Extra as Maybe
 import Measures exposing (Measure)
 
@@ -35,7 +37,12 @@ date =
 
 measure : FieldParser Measure
 measure =
-    FieldParser Measures.parseMeasure Measures.unparseMeasure
+    FieldParser Measures.parse Measures.unparse
+
+
+dateTime : FieldParser DateTime
+dateTime =
+    FieldParser DateTime.parse DateTime.unparse
 
 
 

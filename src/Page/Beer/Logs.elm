@@ -15,10 +15,10 @@ import DateTime exposing (DateTime)
 import Dict
 import Element exposing (..)
 import Entry exposing (Entry)
+import Field exposing (Field)
 import Json.Decode as D
 import Maybe.Extra as Maybe
 import Objecthash.Value as V
-import Parseable exposing (Parseable)
 import Task
 import Time exposing (Posix)
 
@@ -42,7 +42,7 @@ type alias Model =
 
 
 type alias LogEntry =
-    { time : Parseable DateTime
+    { time : Field DateTime
     , descr : String
     }
 
@@ -51,7 +51,7 @@ decoder : D.Decoder Model
 decoder =
     D.array
         (D.map2 LogEntry
-            (D.map DateTime.fromString (D.field "time" D.string))
+            (D.map (Field.fromString Field.dateTime) (D.field "time" D.string))
             (D.field "descr" D.string)
         )
 
@@ -60,8 +60,7 @@ toObjecthashValue : Model -> Maybe V.Value
 toObjecthashValue model =
     let
         f entry =
-            DateTime.parse entry.time
-                |> DateTime.toString
+            Field.unwrap entry.time
                 |> Maybe.map
                     (\time ->
                         [ ( "time", V.string time )
@@ -101,7 +100,7 @@ update zone msg entries =
 
         ChangeTime idx time ->
             ( Array.update idx
-                (\entry -> { entry | time = Parseable.unparsed time })
+                (\entry -> { entry | time = Field.update time entry.time })
                 entries
             , Cmd.none
             )
@@ -111,7 +110,7 @@ update zone msg entries =
 
         Add (Just time) ->
             ( Array.push
-                (LogEntry (Parseable.fromData (DateTime.fromPosix zone time)) "")
+                (LogEntry (Field.fromData Field.dateTime (DateTime.fromPosix zone time)) "")
                 entries
             , Cmd.none
             )
@@ -121,14 +120,14 @@ update zone msg entries =
 
         UnparseTime idx ->
             ( Array.update idx
-                (\entry -> { entry | time = DateTime.unparse entry.time })
+                (\entry -> { entry | time = Field.edit entry.time })
                 entries
             , Cmd.none
             )
 
         ParseTime idx ->
             ( Array.update idx
-                (\entry -> { entry | time = DateTime.parse entry.time })
+                (\entry -> { entry | time = Field.parse entry.time })
                 entries
             , Cmd.none
             )
@@ -152,7 +151,7 @@ logEntryToEntry batchDate logEntry =
     , left =
         { text = formatTime batchDate logEntry.time
         , placeholder = "time"
-        , error = DateTime.isError logEntry.time
+        , error = Field.isError logEntry.time
         , onChange = ChangeTime
         , onFocus = Just UnparseTime
         , onLoseFocus = Just ParseTime
@@ -168,6 +167,6 @@ logEntryToEntry batchDate logEntry =
     }
 
 
-formatTime : Maybe Date -> Parseable DateTime -> String
+formatTime : Maybe Date -> Field DateTime -> String
 formatTime batchDate entryTime =
-    Parseable.format (DateTime.format batchDate) entryTime
+    Field.format (DateTime.format batchDate) entryTime

@@ -13,11 +13,11 @@ import Array.Extra as Array
 import Dict
 import Element exposing (..)
 import Entry exposing (Entry)
+import Field exposing (Field)
 import Json.Decode as D
 import Maybe.Extra as Maybe
 import Measures exposing (Measure)
 import Objecthash.Value as V
-import Parseable exposing (Parseable)
 
 
 
@@ -39,7 +39,7 @@ type alias Model =
 
 
 type alias Ingredient =
-    { amount : Parseable Measure
+    { amount : Field Measure
     , descr : String
     }
 
@@ -49,7 +49,7 @@ decoder =
     D.array
         (D.map2
             Ingredient
-            (D.map Measures.fromString (D.field "amount" D.string))
+            (D.map (Field.fromString Field.measure) (D.field "amount" D.string))
             (D.field "descr" D.string)
         )
 
@@ -58,12 +58,11 @@ toObjecthashValue : Model -> Maybe V.Value
 toObjecthashValue model =
     let
         f ingredient =
-            Measures.parse ingredient.amount
-                |> Measures.toString
+            Field.unwrap ingredient.amount
                 |> Maybe.map
-                    (\measure ->
+                    (\amount ->
                         [ ( "descr", V.string ingredient.descr )
-                        , ( "amount", V.string measure )
+                        , ( "amount", V.string amount )
                         ]
                             |> Dict.fromList
                             |> V.dict
@@ -97,21 +96,21 @@ update msg ingredients =
 
         ChangeAmount idx s ->
             Array.update idx
-                (\ingr -> { ingr | amount = Parseable.unparsed s })
+                (\ingr -> { ingr | amount = Field.update s ingr.amount })
                 ingredients
 
         Parse idx ->
             Array.update idx
-                (\ingr -> { ingr | amount = Measures.parse ingr.amount })
+                (\ingr -> { ingr | amount = Field.parse ingr.amount })
                 ingredients
 
         Unparse idx ->
             Array.update idx
-                (\ingr -> { ingr | amount = Measures.unparse ingr.amount })
+                (\ingr -> { ingr | amount = Field.edit ingr.amount })
                 ingredients
 
         Add ->
-            Array.push (Ingredient (Measures.fromString "") "") ingredients
+            Array.push (Ingredient (Field.fromString Field.measure "") "") ingredients
 
         Remove idx ->
             Array.append
@@ -136,7 +135,7 @@ ingredientToEntry ingredient =
     { onRemove = Remove
     , left =
         { text = formatAmount ingredient.amount
-        , error = Measures.isError ingredient.amount
+        , error = Field.isError ingredient.amount
         , onChange = ChangeAmount
         , placeholder = "1.5 ounces"
         , onFocus = Just Unparse
@@ -153,6 +152,6 @@ ingredientToEntry ingredient =
     }
 
 
-formatAmount : Parseable Measure -> String
+formatAmount : Field Measure -> String
 formatAmount amount =
-    Parseable.format Measures.format amount
+    Field.format Measures.format amount

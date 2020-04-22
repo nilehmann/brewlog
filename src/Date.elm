@@ -10,7 +10,6 @@ module Date exposing
     )
 
 import Dict
-import Parseable exposing (Parseable)
 import Parser
     exposing
         ( (|.)
