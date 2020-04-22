@@ -24,7 +24,6 @@ import Maybe.Extra as Maybe
 import Measures exposing (Measure)
 import Numeral
 import Objecthash.Value as V
-import Parseable exposing (Parseable)
 
 
 
@@ -34,7 +33,7 @@ import Parseable exposing (Parseable)
 type alias Model =
     { date : Field Date
     , name : String
-    , batchSize : Parseable Measure
+    , batchSize : Field Measure
     , originalGravity : String
     , finalGravity : String
     }
@@ -52,7 +51,7 @@ init : Date.Date -> Model
 init date =
     { date = Field.fromData Field.date date
     , name = ""
-    , batchSize = Measures.fromString "5 gallons"
+    , batchSize = Field.fromString Field.measure "5 gallons"
     , originalGravity = ""
     , finalGravity = ""
     }
@@ -63,7 +62,7 @@ decoder =
     D.map5 Model
         (D.map (Field.fromString Field.date) (D.field "date" D.string))
         (D.field "name" D.string)
-        (D.map Measures.fromString (D.field "batchSize" D.string))
+        (D.map (Field.fromString Field.measure) (D.field "batchSize" D.string))
         (D.withDefault "" (D.field "originalGravity" D.string))
         (D.withDefault "" (D.field "finalGravity" D.string))
 
@@ -82,7 +81,7 @@ toObjecthashValue model =
                 |> V.dict
         )
         (Field.unwrap model.date)
-        (Measures.toString (Measures.parse model.batchSize))
+        (Field.unwrap model.batchSize)
 
 
 getDate : Model -> Maybe Date.Date
@@ -95,9 +94,9 @@ getDate model =
 
 
 type Msg
-    = ChangeDate String
-    | ChangeName String
-    | ChangeBatchSize String
+    = UpdateDate String
+    | UpdateName String
+    | UpdateBatchSize String
     | ChangeOG String
     | ChangeFG String
     | ParseDate
@@ -109,9 +108,6 @@ type Msg
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        ChangeDate s ->
-            { model | date = Field.update s model.date }
-
         ChangeOG s ->
             { model | originalGravity = s }
 
@@ -124,17 +120,20 @@ update msg model =
         UnparseDate ->
             { model | date = Field.edit model.date }
 
+        UpdateDate s ->
+            { model | date = Field.update s model.date }
+
         ParseBatchSize ->
-            { model | batchSize = Measures.parse model.batchSize }
+            { model | batchSize = Field.parse model.batchSize }
 
         UnparseBatchSize ->
-            { model | batchSize = Measures.unparse model.batchSize }
+            { model | batchSize = Field.edit model.batchSize }
 
-        ChangeName name ->
+        UpdateBatchSize s ->
+            { model | batchSize = Field.update s model.batchSize }
+
+        UpdateName name ->
             { model | name = name }
-
-        ChangeBatchSize batchSize ->
-            { model | batchSize = Parseable.unparsed batchSize }
 
 
 
@@ -184,7 +183,7 @@ viewDate : Field Date -> Element Msg
 viewDate date =
     I.text
         (Events.onFocus UnparseDate :: Events.onLoseFocus ParseDate :: inputAttrs ++ checkDate date)
-        { onChange = ChangeDate
+        { onChange = UpdateDate
         , text = Field.format (Date.format False) date
         , placeholder =
             Just (I.placeholder [ moveLeft 7 ] (text "January 1st, 1970 "))
@@ -205,27 +204,27 @@ viewName : String -> Element Msg
 viewName name =
     I.text
         inputAttrs
-        { onChange = ChangeName
+        { onChange = UpdateName
         , text = name
         , placeholder = Just (I.placeholder [ moveLeft 7 ] (text "Russian Imperial Stout"))
         , label = I.labelHidden ""
         }
 
 
-viewBatchSize : Parseable Measure -> Element Msg
+viewBatchSize : Field Measure -> Element Msg
 viewBatchSize batchSize =
     I.text
         (Events.onFocus UnparseBatchSize :: Events.onLoseFocus ParseBatchSize :: inputAttrs ++ checkBatchSize batchSize)
-        { onChange = ChangeBatchSize
-        , text = Parseable.format Measures.format batchSize
+        { onChange = UpdateBatchSize
+        , text = Field.format Measures.format batchSize
         , placeholder = Just (I.placeholder [ moveLeft 7 ] (text "5 gallons"))
         , label = I.labelHidden ""
         }
 
 
-checkBatchSize : Parseable Measure -> List (Attribute Msg)
+checkBatchSize : Field Measure -> List (Attribute Msg)
 checkBatchSize batchSize =
-    if Measures.isError batchSize then
+    if Field.isError batchSize then
         [ Font.color (rgb 1 0 0) ]
 
     else

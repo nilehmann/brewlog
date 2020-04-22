@@ -1,4 +1,4 @@
-module Measures exposing (Measure, format, fromString, isError, parse, toString, unparse)
+module Measures exposing (Measure, format, fromString, isError, parse, parseMeasure, toString, unparse, unparseMeasure)
 
 import Dict
 import Parseable exposing (Parseable)

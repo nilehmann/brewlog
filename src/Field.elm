@@ -1,7 +1,21 @@
-module Field exposing (Field, asMaybe, date, edit, format, fromData, fromString, isError, parse, unwrap, update)
+module Field exposing
+    ( Field
+    , asMaybe
+    , date
+    , edit
+    , format
+    , fromData
+    , fromString
+    , isError
+    , measure
+    , parse
+    , unwrap
+    , update
+    )
 
 import Date exposing (Date)
 import Maybe.Extra as Maybe
+import Measures exposing (Measure)
 
 
 
@@ -17,6 +31,11 @@ type alias FieldParser a =
 date : FieldParser Date
 date =
     FieldParser Date.parse Date.unparse
+
+
+measure : FieldParser Measure
+measure =
+    FieldParser Measures.parseMeasure Measures.unparseMeasure
 
 
 
