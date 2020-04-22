@@ -17,6 +17,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import Field exposing (Field)
 import Json.Decode as D
 import Json.Decode.Extra as D
 import Maybe.Extra as Maybe
@@ -31,7 +32,7 @@ import Parseable exposing (Parseable)
 
 
 type alias Model =
-    { date : Parseable Date
+    { date : Field Date
     , name : String
     , batchSize : Parseable Measure
     , originalGravity : String
@@ -49,7 +50,7 @@ abv model =
 
 init : Date.Date -> Model
 init date =
-    { date = Parseable.fromData date
+    { date = Field.fromData Field.date date
     , name = ""
     , batchSize = Measures.fromString "5 gallons"
     , originalGravity = ""
@@ -60,7 +61,7 @@ init date =
 decoder : D.Decoder Model
 decoder =
     D.map5 Model
-        (D.map Date.fromString (D.field "date" D.string))
+        (D.map (Field.fromString Field.date) (D.field "date" D.string))
         (D.field "name" D.string)
         (D.map Measures.fromString (D.field "batchSize" D.string))
         (D.withDefault "" (D.field "originalGravity" D.string))
@@ -80,13 +81,13 @@ toObjecthashValue model =
                 |> Dict.fromList
                 |> V.dict
         )
-        (Date.toString (Date.parse model.date))
+        (Field.unwrap model.date)
         (Measures.toString (Measures.parse model.batchSize))
 
 
 getDate : Model -> Maybe Date.Date
 getDate model =
-    Parseable.getData model.date
+    Field.asMaybe model.date
 
 
 
@@ -109,7 +110,7 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         ChangeDate s ->
-            { model | date = Parseable.unparsed s }
+            { model | date = Field.update s model.date }
 
         ChangeOG s ->
             { model | originalGravity = s }
@@ -118,10 +119,10 @@ update msg model =
             { model | finalGravity = s }
 
         ParseDate ->
-            { model | date = Date.parse model.date }
+            { model | date = Field.parse model.date }
 
         UnparseDate ->
-            { model | date = Date.unparse model.date }
+            { model | date = Field.edit model.date }
 
         ParseBatchSize ->
             { model | batchSize = Measures.parse model.batchSize }
@@ -179,21 +180,21 @@ viewRight model =
         ]
 
 
-viewDate : Parseable Date -> Element Msg
+viewDate : Field Date -> Element Msg
 viewDate date =
     I.text
         (Events.onFocus UnparseDate :: Events.onLoseFocus ParseDate :: inputAttrs ++ checkDate date)
         { onChange = ChangeDate
-        , text = Parseable.format (Date.format False) date
+        , text = Field.format (Date.format False) date
         , placeholder =
             Just (I.placeholder [ moveLeft 7 ] (text "January 1st, 1970 "))
         , label = I.labelHidden ""
         }
 
 
-checkDate : Parseable Date -> List (Attribute Msg)
+checkDate : Field Date -> List (Attribute Msg)
 checkDate date =
-    if Date.isError date then
+    if Field.isError date then
         [ Font.color (rgb 1 0 0) ]
 
     else

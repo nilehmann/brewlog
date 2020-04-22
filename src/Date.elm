@@ -4,13 +4,9 @@ module Date exposing
     , compare
     , format
     , fromPosix
-    , fromString
-    , isError
     , parse
     , parser
-    , toString
     , unparse
-    , unparseDate
     )
 
 import Dict
@@ -43,11 +39,6 @@ type alias Date =
     }
 
 
-isError : Parseable Date -> Bool
-isError =
-    Parseable.isError parseDate
-
-
 fromPosix : Time.Zone -> Time.Posix -> Date
 fromPosix zone posix =
     { day = Time.toDay zone posix
@@ -77,23 +68,8 @@ compare d1 d2 =
 -- PARSER
 
 
-fromString : String -> Parseable Date
-fromString =
-    Parseable.fromString parseDate
-
-
-toString : Parseable Date -> Maybe String
-toString =
-    Parseable.toString unparseDate
-
-
-parse : Parseable Date -> Parseable Date
-parse =
-    Parseable.parse parseDate
-
-
-parseDate : String -> Maybe Date
-parseDate str =
+parse : String -> Maybe Date
+parse str =
     Parser.run (succeed cap |. spaces |= parser |. spaces |. end) str
         |> Result.toMaybe
 
@@ -178,13 +154,8 @@ checkYear str =
 -- UNPARSE
 
 
-unparse : Parseable Date -> Parseable Date
-unparse =
-    Parseable.unparse unparseDate
-
-
-unparseDate : Date -> String
-unparseDate d =
+unparse : Date -> String
+unparse d =
     let
         ( day, month, year ) =
             unpack d
