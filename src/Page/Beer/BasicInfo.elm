@@ -21,7 +21,7 @@ import Field exposing (Field)
 import Json.Decode as D
 import Json.Decode.Extra as D
 import Maybe.Extra as Maybe
-import Measures exposing (Measure)
+import Measures exposing (Volume)
 import Numeral
 import Objecthash.Value as V
 
@@ -33,7 +33,7 @@ import Objecthash.Value as V
 type alias Model =
     { date : Field Date
     , name : String
-    , batchSize : Field Measure
+    , batchSize : Field Volume
     , originalGravity : String
     , finalGravity : String
     }
@@ -51,7 +51,7 @@ init : Date.Date -> Model
 init date =
     { date = Field.fromData Field.date date
     , name = ""
-    , batchSize = Field.fromString Field.measure "5 gallons"
+    , batchSize = Field.fromString Field.volume "5 gallons"
     , originalGravity = ""
     , finalGravity = ""
     }
@@ -62,7 +62,7 @@ decoder =
     D.map5 Model
         (D.map (Field.fromString Field.date) (D.field "date" D.string))
         (D.field "name" D.string)
-        (D.map (Field.fromString Field.measure) (D.field "batchSize" D.string))
+        (D.map (Field.fromString Field.volume) (D.field "batchSize" D.string))
         (D.withDefault "" (D.field "originalGravity" D.string))
         (D.withDefault "" (D.field "finalGravity" D.string))
 
@@ -211,18 +211,18 @@ viewName name =
         }
 
 
-viewBatchSize : Field Measure -> Element Msg
+viewBatchSize : Field Volume -> Element Msg
 viewBatchSize batchSize =
     I.text
         (Events.onFocus UnparseBatchSize :: Events.onLoseFocus ParseBatchSize :: inputAttrs ++ checkBatchSize batchSize)
         { onChange = UpdateBatchSize
-        , text = Field.format Measures.format batchSize
+        , text = Field.format Measures.formatVolume batchSize
         , placeholder = Just (I.placeholder [ moveLeft 7 ] (text "5 gallons"))
         , label = I.labelHidden ""
         }
 
 
-checkBatchSize : Field Measure -> List (Attribute Msg)
+checkBatchSize : Field Volume -> List (Attribute Msg)
 checkBatchSize batchSize =
     if Field.isError batchSize then
         [ Font.color (rgb 1 0 0) ]

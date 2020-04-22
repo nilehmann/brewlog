@@ -1,5 +1,6 @@
 module Field exposing
     ( Field
+    , anyAmount
     , asMaybe
     , date
     , dateTime
@@ -8,16 +9,16 @@ module Field exposing
     , fromData
     , fromString
     , isError
-    , measure
     , parse
     , unwrap
     , update
+    , volume
     )
 
 import Date exposing (Date)
 import DateTime exposing (DateTime)
 import Maybe.Extra as Maybe
-import Measures exposing (Measure)
+import Measures exposing (AnyAmount, Volume)
 
 
 
@@ -35,9 +36,14 @@ date =
     FieldParser Date.parse Date.unparse
 
 
-measure : FieldParser Measure
-measure =
-    FieldParser Measures.parse Measures.unparse
+anyAmount : FieldParser AnyAmount
+anyAmount =
+    FieldParser Measures.parseAny Measures.unparseAny
+
+
+volume : FieldParser Volume
+volume =
+    FieldParser Measures.parseVolume Measures.unparseVolume
 
 
 dateTime : FieldParser DateTime

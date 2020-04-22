@@ -16,7 +16,7 @@ import Entry exposing (Entry)
 import Field exposing (Field)
 import Json.Decode as D
 import Maybe.Extra as Maybe
-import Measures exposing (Measure)
+import Measures exposing (AnyAmount)
 import Objecthash.Value as V
 
 
@@ -39,7 +39,7 @@ type alias Model =
 
 
 type alias Ingredient =
-    { amount : Field Measure
+    { amount : Field AnyAmount
     , descr : String
     }
 
@@ -49,7 +49,7 @@ decoder =
     D.array
         (D.map2
             Ingredient
-            (D.map (Field.fromString Field.measure) (D.field "amount" D.string))
+            (D.map (Field.fromString Field.anyAmount) (D.field "amount" D.string))
             (D.field "descr" D.string)
         )
 
@@ -110,7 +110,7 @@ update msg ingredients =
                 ingredients
 
         Add ->
-            Array.push (Ingredient (Field.fromString Field.measure "") "") ingredients
+            Array.push (Ingredient (Field.fromString Field.anyAmount "") "") ingredients
 
         Remove idx ->
             Array.append
@@ -152,6 +152,6 @@ ingredientToEntry ingredient =
     }
 
 
-formatAmount : Field Measure -> String
+formatAmount : Field AnyAmount -> String
 formatAmount amount =
-    Field.format Measures.format amount
+    Field.format Measures.formatAny amount
