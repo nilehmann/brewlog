@@ -283,7 +283,7 @@ viewReady : Beer -> Element BeerMsg
 viewReady beer =
     column [ spacing 39, width fill ]
         [ map GotBasicInfoMsg (BasicInfo.view beer.basicInfo)
-        , column [ spacing 45, width fill ]
+        , column [ spacing 49, width fill ]
             [ receipe beer
             , map GotLogsMsg (Logs.view beer.logs (BasicInfo.getDate beer.basicInfo))
             ]

@@ -30,7 +30,7 @@ viewEntries : String -> msg -> List (Entry msg) -> Element msg
 viewEntries title onAdd entries =
     column [ spacing -4, width fill ]
         [ el [ Font.size 30, height (px 40) ] (text title)
-        , column [ spacing 8, width fill ]
+        , column [ spacing 9, width fill ]
             [ column [ spacing 2, width fill ]
                 (List.indexedMap viewEntry entries)
             , viewAddButton onAdd
@@ -105,5 +105,9 @@ viewAddButton onAdd =
     I.button
         [ centerX ]
         { onPress = Just onAdd
-        , label = text "Add"
+        , label =
+            image [ width (px 20), height (px 20) ]
+                { src = "/assets/add-32.png"
+                , description = ""
+                }
         }
