@@ -6,6 +6,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as I
+import IndieFlower
 import Maybe.Extra as Maybe
 
 
@@ -32,17 +33,26 @@ viewEntries title onAdd entries =
         [ el [ Font.size 30, height (px 40) ] (text title)
         , column [ spacing 9, width fill ]
             [ column [ spacing 2, width fill ]
-                (List.indexedMap viewEntry entries)
+                (List.indexedMap (viewEntry (maxWidth entries)) entries)
             , viewAddButton onAdd
             ]
         ]
 
 
+maxWidth : List (Entry a) -> Int
+maxWidth entries =
+    List.maximum (List.map (\e -> Debug.log e.left.text (IndieFlower.textWidth 24 e.left.text)) entries)
+        -- List.maximum (List.map (IndieFlower.textWidth 24 << .text << .left) entries)
+        |> Maybe.withDefault 0
+        |> ceiling
+
+
 viewEntry :
     Int
+    -> Int
     -> Entry msg
     -> Element msg
-viewEntry idx entry =
+viewEntry leftWidth idx entry =
     row [ spacing 10 ]
         [ I.button
             [ alignTop, moveDown 7 ]
@@ -53,20 +63,23 @@ viewEntry idx entry =
                     , description = ""
                     }
             }
-        , I.text
-            (width (px 0 |> minimum 140) :: inputAttributes idx entry.left)
-            { onChange = entry.left.onChange idx
-            , text = entry.left.text
-            , placeholder = Just (I.placeholder [] (text entry.left.placeholder))
-            , label = I.labelHidden ""
-            }
-        , I.multiline (inputAttributes idx entry.right)
-            { onChange = entry.right.onChange idx
-            , text = entry.right.text
-            , placeholder = Just (I.placeholder [] (text entry.right.placeholder))
-            , label = I.labelHidden ""
-            , spellcheck = True
-            }
+        , row
+            [ spacing 32, width fill ]
+            [ I.text
+                (width (px leftWidth |> minimum 20) :: inputAttributes idx entry.left)
+                { onChange = entry.left.onChange idx
+                , text = entry.left.text
+                , placeholder = Just (I.placeholder [] (text entry.left.placeholder))
+                , label = I.labelHidden ""
+                }
+            , I.multiline (inputAttributes idx entry.right)
+                { onChange = entry.right.onChange idx
+                , text = entry.right.text
+                , placeholder = Just (I.placeholder [] (text entry.right.placeholder))
+                , label = I.labelHidden ""
+                , spellcheck = True
+                }
+            ]
         ]
 
 
@@ -90,8 +103,7 @@ inputAttributes idx entryField =
     in
     [ alignTop
     , Border.width 0
-    , padding 6
-    , moveLeft 6
+    , paddingXY 0 6
     , spacing 14
     , Background.color (rgba 1 1 1 0)
     ]
