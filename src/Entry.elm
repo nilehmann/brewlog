@@ -41,8 +41,11 @@ viewEntries title onAdd entries =
 
 maxWidth : List (Entry a) -> Int
 maxWidth entries =
-    List.maximum (List.map (\e -> Debug.log e.left.text (IndieFlower.textWidth 24 e.left.text)) entries)
-        -- List.maximum (List.map (IndieFlower.textWidth 24 << .text << .left) entries)
+    -- List.maximum (List.map (IndieFlower.textWidth 24 << .text << .left) entries)
+    -- List.maximum (List.map (.text << .left) entries ++ List.map (.placeholder << .left) entries)
+    List.concatMap (\e -> [ e.left.text, e.left.placeholder ]) entries
+        |> List.map (IndieFlower.textWidth 24)
+        |> List.maximum
         |> Maybe.withDefault 0
         |> ceiling
 

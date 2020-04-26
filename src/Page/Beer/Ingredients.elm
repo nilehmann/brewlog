@@ -137,7 +137,7 @@ ingredientToEntry ingredient =
         { text = formatAmount ingredient.amount
         , error = Field.isError ingredient.amount
         , onChange = ChangeAmount
-        , placeholder = "1.5 ounces"
+        , placeholder = "1.5 oz"
         , onFocus = Just Unparse
         , onLoseFocus = Just Parse
         }

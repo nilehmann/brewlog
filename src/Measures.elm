@@ -2,18 +2,13 @@ module Measures exposing (AnyAmount, Mass, Volume, formatAny, formatVolume, pars
 
 import Dict
 import Parser exposing (..)
+import Parser.Advanced as A
 import Parser.Dict exposing (fromDict)
 
 
-type alias AnyAmount =
-    { value : Float
-    , unit : AnyUnit
-    }
-
-
-type AnyUnit
-    = MassUnit MassUnit
-    | VolumeUnit VolumeUnit
+type AnyAmount
+    = MassAmount Mass
+    | VolumeAmount Volume
 
 
 type alias Mass =
@@ -26,6 +21,7 @@ type MassUnit
     = Pounds
     | Kilograms
     | Grams
+    | Ounces
 
 
 type alias Volume =
@@ -35,8 +31,7 @@ type alias Volume =
 
 
 type VolumeUnit
-    = Ounces
-    | Gallons
+    = Gallons
     | Liters
     | Teaspoons
 
@@ -49,10 +44,10 @@ parseAny s =
 
 anyAmountParser : Parser AnyAmount
 anyAmountParser =
-    succeed AnyAmount
-        |= float
-        |. spaces
-        |= anyUnitParser
+    A.oneOf
+        [ map VolumeAmount (backtrackable volumeParser)
+        , map MassAmount (backtrackable massParser)
+        ]
 
 
 parseVolume : String -> Maybe Volume
@@ -69,19 +64,29 @@ volumeParser =
         |= volumeUnitParser
 
 
-anyUnitParser : Parser AnyUnit
-anyUnitParser =
-    oneOf [ map MassUnit massUnitParser, map VolumeUnit volumeUnitParser ]
+massParser : Parser Mass
+massParser =
+    succeed Mass
+        |= float
+        |. spaces
+        |= massUnitParser
 
 
 massUnitParser : Parser MassUnit
 massUnitParser =
     [ ( "pounds", Pounds )
     , ( "pound", Pounds )
+    , ( "lbs", Pounds )
+    , ( "lb", Pounds )
     , ( "kilograms", Kilograms )
     , ( "kilogram", Kilograms )
+    , ( "kg", Kilograms )
     , ( "grams", Grams )
     , ( "gram", Grams )
+    , ( "g", Grams )
+    , ( "ounces", Ounces )
+    , ( "ounce", Ounces )
+    , ( "oz", Ounces )
     ]
         |> Dict.fromList
         |> fromDict
@@ -91,12 +96,11 @@ volumeUnitParser : Parser VolumeUnit
 volumeUnitParser =
     [ ( "teaspoons", Teaspoons )
     , ( "teaspoon", Teaspoons )
-    , ( "ounces", Ounces )
-    , ( "ounce", Ounces )
     , ( "gallons", Gallons )
     , ( "gallon", Gallons )
     , ( "liters", Liters )
     , ( "liter", Liters )
+    , ( "L", Liters )
     ]
         |> Dict.fromList
         |> fromDict
@@ -104,7 +108,17 @@ volumeUnitParser =
 
 unparseAny : AnyAmount -> String
 unparseAny measure =
-    String.fromFloat measure.value ++ " " ++ singularize measure.value (anyUnitToString measure.unit)
+    case measure of
+        MassAmount m ->
+            unparseMass m
+
+        VolumeAmount v ->
+            unparseVolume v
+
+
+unparseMass : Mass -> String
+unparseMass mass =
+    String.fromFloat mass.value ++ " " ++ massUnitToString mass.unit
 
 
 unparseVolume : Volume -> String
@@ -131,27 +145,20 @@ formatVolume =
     unparseVolume
 
 
-anyUnitToString : AnyUnit -> String
-anyUnitToString unit =
-    case unit of
-        MassUnit u ->
-            massUnitToString u
-
-        VolumeUnit u ->
-            volumeUnitToString u
-
-
 massUnitToString : MassUnit -> String
 massUnitToString unit =
     case unit of
         Pounds ->
-            "pounds"
+            "lbs"
 
         Kilograms ->
-            "kilograms"
+            "kg"
 
         Grams ->
-            "grams"
+            "g"
+
+        Ounces ->
+            "oz"
 
 
 volumeUnitToString : VolumeUnit -> String
@@ -159,9 +166,6 @@ volumeUnitToString unit =
     case unit of
         Teaspoons ->
             "teaspoons"
-
-        Ounces ->
-            "ounces"
 
         Gallons ->
             "gallons"
